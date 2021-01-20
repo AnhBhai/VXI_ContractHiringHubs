@@ -16,7 +16,8 @@ Dependency		:	VXI_ContractManagement mod - Stand alone mod written for ContractH
 
 Conflicts		:	(At this stage there is no known conflicts)
 
-Features		:	[Version 0.1.0.0]
+Features		
+				:	[Version 0.1.0.0]
 
 				:	MercGuilds 		- The purpose of this feature was to bring Random travel contracts to special Merc specific worlds most Notably Outreach, Terra, Gelatea and the Faction Capitals 
 									- Refer to Mods.json for full list of worlds affected
@@ -52,7 +53,8 @@ Features		:	[Version 0.1.0.0]
 									- Added text to Toppling Golliath mission briefing for weight restriction
 
 									
-Future Features	:	MercDeployment 	- New Rewards: Military cache; Special Pokepilot collection; and Faction based pre-/mid-/post- mission assistance.
+Future Features	
+				:	MercDeployment 	- New Rewards: Military cache; Special Pokepilot collection; and Faction based pre-/mid-/post- mission assistance.
 
 				:	MercConflicts 	- An extension of MercDeployment this will be used to create random conflicts or more importantly mimic Lore based conflicts using relatively simple configurable mission links.
 				
