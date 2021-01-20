@@ -272,7 +272,7 @@ namespace VXIContractManagement
         /// <returns></returns>
         public static bool setContractFactionsBasedOnSystems(GenerateContract generateContract, SimGameState simGame, StarSystem originSystem, StarSystem targetSystem = null, string targetName = "", string tgtAllyName = "", string employerName = "", string empAllyName = "", string neutralToAll = "INVALID_UNSET", string hostileToAll = "")
         {
-            List<FactionValue> tmpFactionList = FactionEnumeration.ProceduralContractFactionList;
+            List<FactionValue> tmpFactionList = FactionEnumeration.ProceduralContractFactionList.Where(x => !x.IsCareerIgnoredContractTarget).ToList();
             tmpFactionList.AddRange(FactionEnumeration.PossibleNeutralToAllList);
             tmpFactionList.AddRange(FactionEnumeration.PossibleHostileToAllList);
             tmpFactionList.AddRange(FactionEnumeration.PossibleAllyFallbackList);
@@ -651,7 +651,7 @@ namespace VXIContractManagement
         
         public static bool setContractFactionsBasedOnRandom(GenerateContract generateContract, SimGameState simGame, StarSystem originSystem, StarSystem targetSystem = null, string targetName = "", string tgtAllyName = "", string employerName = "", string empAllyName = "", string neutralToAll = "INVALID_UNSET", string hostileToAll = "")
         {
-            List<FactionValue> tmpFactionList = FactionEnumeration.ProceduralContractFactionList;
+            List<FactionValue> tmpFactionList = FactionEnumeration.ProceduralContractFactionList.Where(x => !x.IsCareerIgnoredContractTarget).ToList();
             tmpFactionList.AddRange(FactionEnumeration.PossibleNeutralToAllList);
             tmpFactionList.AddRange(FactionEnumeration.PossibleHostileToAllList);
             tmpFactionList.AddRange(FactionEnumeration.PossibleAllyFallbackList);

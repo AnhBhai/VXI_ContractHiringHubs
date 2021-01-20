@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using BattleTech.UI.TMProWrapper;
 using System.Linq;
 using System.Text;
 using System.IO;
@@ -508,6 +509,41 @@ namespace VXIContractHiringHubs
         //    }
         //}
         #endregion
+
+        [HarmonyPatch(typeof(SGSystemViewPopulator), "UpdateRoutedSystem")]
+        public static class SGSystemViewPopulator_UpdateRoutedSystem_Patch
+        {
+            static void Postfix(SGSystemViewPopulator __instance)
+            {
+                try
+                {
+                    StarSystem starSystem = (StarSystem)AccessTools.Field(typeof(SGSystemViewPopulator), "starSystem").GetValue(__instance);
+                    List<LocalizableText> systemDescriptionFields = GetInstanceField(typeof(SGSystemViewPopulator), __instance, "SystemDescriptionFields") as List<LocalizableText>;
+                    List<SGNavigationActiveFactionWidget> systemActiveFactionWidget = GetInstanceField(typeof(SGSystemViewPopulator), __instance, "SystemActiveFactionWidget") as List<SGNavigationActiveFactionWidget>;
+                    //string SystemDesc = starSystem.Def.Description.Details;
+
+                    //string jumpTravel = starSystem.JumpDistance.ToString();
+                    __instance.SetField(systemDescriptionFields, $"[JUMP DISTANCE (IN-SYSTEM): {starSystem.JumpDistance}DAYS]{Environment.NewLine}{Environment.NewLine}{starSystem.Def.Description.Details}");
+                    //__instance.SetField(GetInstanceField(typeof(SGSystemViewPopulator), __instance, "SystemTravelTime") as List<LocalizableText>, $"{starSystem.Sim.Starmap.ProjectedTravelTime} (Incl. {jumpTravel}Days Insystem travel)");
+                    //__instance.SetField(GetInstanceField(typeof(SGSystemViewPopulator), __instance, "SystemNameFields") as List<LocalizableText>, $"{starSystem.Name}{Environment.NewLine}[Insystem travel is {jumpTravel}DAYS]");
+
+                    if (systemActiveFactionWidget != null)
+                    {
+                        List<string> systemFactions = new List<string>();
+                        systemFactions.AddRange(starSystem.Def.ContractEmployerIDList);
+                        systemFactions.AddRange(starSystem.Def.ContractTargetIDList.Where(x => !starSystem.Def.ContractEmployerIDList.Contains(x) && x != FactionEnumeration.GetAuriganDirectorateFactionValue().Name));
+                        systemActiveFactionWidget.ForEach(delegate (SGNavigationActiveFactionWidget widget)
+                        {
+                            widget.ActivateFactions(systemFactions, starSystem.Def.OwnerValue.Name);
+                        });
+                    }
+                }
+                catch (Exception e)
+                {
+                    Log.Error(e);
+                }
+            }
+        }
 
         //// When starting a new career
         //[HarmonyPatch(typeof(SGCharacterCreationCareerBackgroundSelectionPanel), "Done")]

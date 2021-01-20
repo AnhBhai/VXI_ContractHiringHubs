@@ -27,34 +27,42 @@ namespace VXIContractHiringHubs
         public static Dictionary<FactionValue, List<StarSystem>> SystemsByFaction = new Dictionary<FactionValue, List<StarSystem>>();
         public static Dictionary<FactionValue, List<StarSystem>> SystemsByFactionUnused = new Dictionary<FactionValue, List<StarSystem>>();
 
-        public static Dictionary<FactionValue, List<StarSystem>> GetExistingSystemsByFaction(SimGameState simGame, List<StarSystem> blackList = null)
+        public static Dictionary<FactionValue, List<StarSystem>> GetExistingSystemsByFaction(SimGameState simGame, List<FactionValue> blackList = null)
         {
             Dictionary<FactionValue, List<StarSystem>> finalList = new Dictionary<FactionValue, List<StarSystem>>();
 
-            List<StarSystem> systemValues = simGame.StarSystems.FindAll(f => f.OwnerValue.IsRealFaction);
+            List<FactionValue> unfilteredFactionList;
+            if (blackList == null)
+                unfilteredFactionList = FactionEnumeration.FactionList;
+            else
+                unfilteredFactionList = FactionEnumeration.FactionList.Where(x => !blackList.Contains(x)).ToList();
 
-            List<FactionValue> unfilteredFactionList = FactionEnumeration.FactionList.FindAll((FactionValue faction) => faction.IsRealFaction);
+            unfilteredFactionList = unfilteredFactionList.Distinct<FactionValue>().ToList();
 
             foreach (FactionValue factionValue in unfilteredFactionList)
             {
-                List<StarSystem> filteredStarSystems = new List<StarSystem>();
-                foreach (StarSystem starSystem in systemValues)
+                List<StarSystem> filteredStarSystems = simGame.StarSystems.FindAll(f => f.OwnerValue.Name == factionValue.Name);
+
+                if (filteredStarSystems.Count > 0 && !finalList.ContainsKey(factionValue))
                 {
-                    if (starSystem.OwnerValue == factionValue)
+                    if (factionValue.Name.Equals("Locals"))
                     {
-                        filteredStarSystems.Add(starSystem);
+                        if (finalList.ContainsKey(FactionEnumeration.GetAuriganPiratesFactionValue()))
+                            finalList[FactionEnumeration.GetAuriganPiratesFactionValue()].AddRange(filteredStarSystems);
+                        else
+                            finalList.Add(FactionEnumeration.GetAuriganPiratesFactionValue(), filteredStarSystems);
                     }
-                }
-                if (filteredStarSystems.Count > 0)
-                {
-                    finalList.Add(factionValue, filteredStarSystems);
+                    else
+                    {
+                        finalList.Add(factionValue, filteredStarSystems);
+                    }
                 }
             }
 
             return finalList;
         }
 
-        public static KeyValuePair<FactionValue, List<StarSystem>> RetrieveFactionSystems(SimGameState simGame, List<StarSystem> blackList = null, bool limitDuplicates = true)
+        public static KeyValuePair<FactionValue, List<StarSystem>> RetrieveFactionSystems(SimGameState simGame, List<FactionValue> blackList, bool limitDuplicates = true)
         {
             if (limitDuplicates)
             {
@@ -90,7 +98,9 @@ namespace VXIContractHiringHubs
                 bool clearFirst = false;
                 int deploymentMissions = 0;
 
-                List<StarSystem> blackList = simGame.StarSystems.FindAll(x => x.OwnerValue.Name == "ComStar");
+                List<FactionValue> blackList = new List<FactionValue>();
+                blackList.Add(GenerateContractFactions.GetFactionValueFromString("ComStar"));
+                blackList.Add(GenerateContractFactions.GetFactionValueFromString("NoFaction"));
 
                 SystemsByFaction = GetExistingSystemsByFaction(simGame, blackList);
                 SystemsByFactionUnused = GetExistingSystemsByFaction(simGame, blackList);
