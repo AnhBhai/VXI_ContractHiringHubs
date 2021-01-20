@@ -3,7 +3,7 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 16
 VisualStudioVersion = 16.0.28803.352
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CoreMod", "CoreMod\CoreMod.csproj", "{5683EA63-5737-4732-B5AA-8C307C949BC7}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ContractHiringHubs", "CoreMod\ContractHiringHubs.csproj", "{5683EA63-5737-4732-B5AA-8C307C949BC7}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ContractManagement", "ContractManagement\ContractManagement.csproj", "{BE4FA5E4-09DB-4592-BBE9-E119E99DD523}"
 EndProject

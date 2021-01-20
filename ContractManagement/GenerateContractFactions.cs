@@ -273,11 +273,19 @@ namespace VXIContractManagement
         public static bool setContractFactionsBasedOnSystems(GenerateContract generateContract, SimGameState simGame, StarSystem originSystem, StarSystem targetSystem = null, string targetName = "", string tgtAllyName = "", string employerName = "", string empAllyName = "", string neutralToAll = "INVALID_UNSET", string hostileToAll = "")
         {
             List<FactionValue> tmpFactionList = FactionEnumeration.ProceduralContractFactionList;
+            tmpFactionList.AddRange(FactionEnumeration.PossibleNeutralToAllList);
+            tmpFactionList.AddRange(FactionEnumeration.PossibleHostileToAllList);
+            tmpFactionList.AddRange(FactionEnumeration.PossibleAllyFallbackList);
+            //tmpFactionList = tmpFactionList.Distinct().ToList();
+
             List<string> clanFactions = tmpFactionList.FindAll(f => f.IsClan == true).ToList().ConvertAll(x => x.Name);
             List<string> sphereFactions = tmpFactionList.FindAll(f => f.IsClan == false).ToList().ConvertAll(x => x.Name);
 
+            clanFactions = clanFactions.Distinct().ToList();
+            sphereFactions = sphereFactions.Distinct().ToList();
+
             List<string> findSystemFaction = new List<string>();
-            List<string> findNonSystemFaction = new List<string>();
+            //List<string> findNonSystemFaction = new List<string>();
 
             bool bEmpRemoved = false;
 
@@ -394,15 +402,15 @@ namespace VXIContractManagement
                         }
                         if (findSystemFaction.Count > 0)
                         {
-                            generateContract.ContractTarget = findSystemFaction[simGame.NetworkRandom.Int(0, findSystemFaction.Count() - 1)];
+                            generateContract.ContractTarget = findSystemFaction.GetRandomElement();
                         }
                         else if (!targetSystem.OwnerValue.IsClan)
                         {
-                            generateContract.ContractTarget = sphereFactions[simGame.NetworkRandom.Int(0, sphereFactions.Count() - 1)];
+                            generateContract.ContractTarget = sphereFactions.GetRandomElement();
                         }
                         else
                         {
-                            generateContract.ContractTarget = clanFactions[simGame.NetworkRandom.Int(0, clanFactions.Count() - 1)];
+                            generateContract.ContractTarget = clanFactions.GetRandomElement();
                         }
                     }
                 }
@@ -448,15 +456,15 @@ namespace VXIContractManagement
                         }
                         if (findSystemFaction.Count > 0)
                         {
-                            generateContract.ContractTgtAlly = findSystemFaction[simGame.NetworkRandom.Int(0, findSystemFaction.Count() - 1)];
+                            generateContract.ContractTgtAlly = findSystemFaction.GetRandomElement();
                         }
                         else if (!targetSystem.OwnerValue.IsClan)
                         {
-                            generateContract.ContractTgtAlly = sphereFactions[simGame.NetworkRandom.Int(0, sphereFactions.Count() - 1)];
+                            generateContract.ContractTgtAlly = sphereFactions.GetRandomElement();
                         }
                         else
                         {
-                            generateContract.ContractTgtAlly = clanFactions[simGame.NetworkRandom.Int(0, clanFactions.Count() - 1)];
+                            generateContract.ContractTgtAlly = clanFactions.GetRandomElement();
                         }
                     }
                     else
@@ -501,11 +509,11 @@ namespace VXIContractManagement
                         }
                         if (findSystemFaction.Count > 0)
                         {
-                            generateContract.ContractEmployer = findSystemFaction[simGame.NetworkRandom.Int(0, findSystemFaction.Count() - 1)];
+                            generateContract.ContractEmployer = findSystemFaction.GetRandomElement();
                         }
                         else
                         {
-                            generateContract.ContractEmployer = sphereFactions[simGame.NetworkRandom.Int(0, sphereFactions.Count() - 1)];
+                            generateContract.ContractEmployer = sphereFactions.GetRandomElement();
                         }
                     }
                 }
@@ -542,11 +550,11 @@ namespace VXIContractManagement
                         }
                         if (findSystemFaction.Count > 0)
                         {
-                            generateContract.ContractEmpAlly = findSystemFaction[simGame.NetworkRandom.Int(0, findSystemFaction.Count() - 1)];
+                            generateContract.ContractEmpAlly = findSystemFaction.GetRandomElement();
                         }
                         else
                         {
-                            generateContract.ContractEmpAlly = sphereFactions[simGame.NetworkRandom.Int(0, sphereFactions.Count() - 1)];
+                            generateContract.ContractEmpAlly = sphereFactions.GetRandomElement();
                         }
                     }
                     else
@@ -616,15 +624,15 @@ namespace VXIContractManagement
                         }
                         if (findSystemFaction.Count > 0)
                         {
-                            generateContract.ContractHtlToAll = findSystemFaction[simGame.NetworkRandom.Int(0, findSystemFaction.Count() - 1)];
+                            generateContract.ContractHtlToAll = findSystemFaction.GetRandomElement();
                         }
                         else if (targetSystem.OwnerValue.IsClan)
                         {
-                            generateContract.ContractHtlToAll = clanFactions[simGame.NetworkRandom.Int(0, clanFactions.Count() - 1)];
+                            generateContract.ContractHtlToAll = clanFactions.GetRandomElement();
                         }
                         else
                         {
-                            generateContract.ContractHtlToAll = sphereFactions[simGame.NetworkRandom.Int(0, sphereFactions.Count() - 1)];
+                            generateContract.ContractHtlToAll = sphereFactions.GetRandomElement();
                         }
                     }
                     else
@@ -640,6 +648,381 @@ namespace VXIContractManagement
             }
             return true;
         }
+        
+        public static bool setContractFactionsBasedOnRandom(GenerateContract generateContract, SimGameState simGame, StarSystem originSystem, StarSystem targetSystem = null, string targetName = "", string tgtAllyName = "", string employerName = "", string empAllyName = "", string neutralToAll = "INVALID_UNSET", string hostileToAll = "")
+        {
+            List<FactionValue> tmpFactionList = FactionEnumeration.ProceduralContractFactionList;
+            tmpFactionList.AddRange(FactionEnumeration.PossibleNeutralToAllList);
+            tmpFactionList.AddRange(FactionEnumeration.PossibleHostileToAllList);
+            tmpFactionList.AddRange(FactionEnumeration.PossibleAllyFallbackList);
+
+            List<string> clanFactions = tmpFactionList.FindAll(f => f.IsClan == true).ToList().ConvertAll(x => x.Name);
+            List<string> sphereFactions = tmpFactionList.FindAll(f => f.IsClan == false).ToList().ConvertAll(x => x.Name);
+
+            clanFactions = clanFactions.Distinct().ToList();
+            sphereFactions = sphereFactions.Distinct().ToList();
+
+            List<string> findSystemFaction = new List<string>();
+            //List<string> findNonSystemFaction = new List<string>();
+
+            bool bEmpRemoved = false;
+
+            string originSystemID = "";
+            string targetSystemID = "";
+            if (targetSystem is null)
+            {
+                originSystemID = targetSystemID = originSystem.OwnerDef.Name;
+                targetSystem = originSystem;
+            }
+            else
+            {
+                originSystemID = originSystem.OwnerDef.Name;
+                targetSystemID = targetSystem.OwnerDef.Name;
+            }
+
+            // Need to avoid duplicate Factions by removing factions assigned already or that will be assigned
+
+            if (employerName != "INVALID_UNSET") // A Faction may need preserving
+            {
+                if (employerName != "")
+                {
+                    if (!clanFactions.Remove(employerName) && !sphereFactions.Remove(employerName))
+                        employerName = ""; // Doesn't exist in lists so ignore and reset the parameter
+                    else
+                        bEmpRemoved = true;
+                }
+                if (generateContract.ContractEmployer != "" && employerName == "")
+                {
+                    if (!clanFactions.Remove(generateContract.ContractEmployer) && !sphereFactions.Remove(generateContract.ContractEmployer))
+                        generateContract.ContractEmployer = ""; // Doesn't exist in lists so ignore and reset the property
+                    else
+                        bEmpRemoved = true;
+                }
+            }
+
+            if (empAllyName != "INVALID_UNSET") // A Faction may need preserving
+            {
+                if (empAllyName != "")
+                {
+                    if (!clanFactions.Remove(empAllyName) && !sphereFactions.Remove(empAllyName))
+                        empAllyName = ""; // Doesn't exist in lists so ignore and reset the parameter
+                }
+                if (generateContract.ContractEmpAlly != "" && empAllyName == "")
+                {
+                    if (!clanFactions.Remove(generateContract.ContractEmpAlly) && !sphereFactions.Remove(generateContract.ContractEmpAlly))
+                        generateContract.ContractEmpAlly = ""; // Doesn't exist in lists so ignore and reset the parameter
+                }
+            }
+
+            if (tgtAllyName != "INVALID_UNSET") // A Faction may need preserving
+            {
+                if (tgtAllyName != "")
+                {
+                    if (!clanFactions.Remove(tgtAllyName) && !sphereFactions.Remove(tgtAllyName))
+                        empAllyName = ""; // Doesn't exist in lists so ignore and reset the parameter
+                }
+                if (generateContract.ContractTgtAlly != "" && tgtAllyName == "")
+                {
+                    if (!clanFactions.Remove(generateContract.ContractTgtAlly) && !sphereFactions.Remove(generateContract.ContractTgtAlly))
+                        generateContract.ContractTgtAlly = ""; // Doesn't exist in lists so ignore and reset the parameter
+                }
+            }
+
+            if (hostileToAll != "INVALID_UNSET") // A Faction may need preserving
+            {
+                if (hostileToAll != "")
+                {
+                    if (!clanFactions.Remove(hostileToAll) && !sphereFactions.Remove(hostileToAll))
+                        empAllyName = ""; // Doesn't exist in lists so ignore and reset the parameter
+                }
+                if (generateContract.ContractHtlToAll != "" && hostileToAll == "")
+                {
+                    if (!clanFactions.Remove(generateContract.ContractHtlToAll) && !sphereFactions.Remove(generateContract.ContractHtlToAll))
+                        generateContract.ContractHtlToAll = ""; // Doesn't exist in lists so ignore and reset the parameter
+                }
+            }
+
+            // Handle Target Faction first
+            if (generateContract.ContractTarget == "" || targetName == "INVALID_UNSET" || targetName != "")
+            {
+                if (targetName != "" && targetName != "INVALID_UNSET")
+                {
+                    if (clanFactions.Contains(targetName))
+                    {
+                        generateContract.ContractTarget = targetName;
+                    }
+                    else if (sphereFactions.Contains(targetName))
+                    {
+                        generateContract.ContractTarget = targetName;
+                    }
+                    else // Doesn't exist in lists so ignore parameter
+                    {
+                        targetName = "";
+                    }
+                }
+                // NOT AN ELSE because the above may fail to be legitimate targetName
+                if (generateContract.ContractTarget == "" || targetName == "INVALID_UNSET")
+                {
+                    foreach (string contractTargetID in targetSystem.Def.ContractTargetIDList)
+                    {
+                        if (clanFactions.Contains(contractTargetID) || sphereFactions.Contains(contractTargetID))
+                            findSystemFaction.Add(contractTargetID);
+                    }
+                    if (findSystemFaction.Count > 0)
+                    {
+                        if (generateContract.ContractEmployer.Equals("") && employerName.Equals(""))
+                            generateContract.ContractTarget = findSystemFaction.GetRandomElement();
+                        else if (!generateContract.ContractEmployer.Equals(""))
+                            generateContract.ContractTarget = findSystemFaction.Where(x => !GetFactionValueFromString(generateContract.ContractEmployer).FactionDef.Allies.Contains(x)).GetRandomElement();
+                        else
+                            generateContract.ContractTarget = findSystemFaction.Where(x => !GetFactionValueFromString(employerName).FactionDef.Allies.Contains(x)).GetRandomElement();
+                    }
+                    else if (!targetSystem.OwnerValue.IsClan)
+                    {
+                        if (generateContract.ContractEmployer.Equals("") && employerName.Equals(""))
+                            generateContract.ContractTarget = sphereFactions.GetRandomElement();
+                        else
+                            generateContract.ContractTarget = sphereFactions.Where(x => !GetFactionValueFromString(generateContract.ContractEmployer).FactionDef.Allies.Contains(x) && !GetFactionValueFromString(employerName).FactionDef.Allies.Contains(x)).GetRandomElement();
+                    }
+                    else
+                    {
+                        generateContract.ContractTarget = clanFactions.GetRandomElement();
+                    }
+                }
+            }
+            if (!clanFactions.Remove(generateContract.ContractTarget) && !sphereFactions.Remove(generateContract.ContractTarget))
+            {
+                Logger.Log("ERROR: GenerateContract.ContractTarget does not have a valid value: " + generateContract.ContractTarget);
+            }
+            findSystemFaction.Clear();
+
+            if (neutralToAll == "INVALID_UNSET")
+                generateContract.ContractNtlToAll = neutralToAll;
+            else
+                generateContract.ContractNtlToAll = "INVALID_UNSET";
+
+            if (generateContract.ContractTgtAlly == "" || tgtAllyName == "INVALID_UNSET" || tgtAllyName != "")
+            {
+                if (tgtAllyName != "" && tgtAllyName != "INVALID_UNSET")
+                {
+                    if (clanFactions.Contains(tgtAllyName))
+                    {
+                        generateContract.ContractTgtAlly = tgtAllyName;
+                    }
+                    else if (sphereFactions.Contains(tgtAllyName))
+                    {
+                        generateContract.ContractTgtAlly = tgtAllyName;
+                    }
+                    else // Doesn't exist in lists so ignore parameter
+                    {
+                        tgtAllyName = "";
+                    }
+                }
+                // NOT AN ELSE because the above may fail to be legitimate targetName
+                if (generateContract.ContractTgtAlly == "" || tgtAllyName == "INVALID_UNSET")
+                {
+                    if (generateContract.ContractTarget != "")
+                    {
+                        FactionValue tmpFactionValue = FactionEnumeration.GetFactionByName(generateContract.ContractTarget);
+                        foreach (string contractTargetID in tmpFactionValue.FactionDef.Allies)
+                        {
+                            if (clanFactions.Contains(contractTargetID) || sphereFactions.Contains(contractTargetID))
+                                findSystemFaction.Add(contractTargetID);
+                        }
+                        if (findSystemFaction.Count > 0)
+                        {
+                            generateContract.ContractTgtAlly = findSystemFaction.GetRandomElement();
+                        }
+                        else if (!targetSystem.OwnerValue.IsClan)
+                        {
+                            generateContract.ContractTgtAlly = sphereFactions.GetRandomElement();
+                        }
+                        else
+                        {
+                            generateContract.ContractTgtAlly = clanFactions.GetRandomElement();
+                        }
+                    }
+                    else
+                    {
+                        Logger.Log("ERROR: GenerateContract.ContractTarget does not have a value: " + generateContract.ContractTarget);
+                        return false;
+                    }
+                }
+            }
+            if (!clanFactions.Remove(generateContract.ContractTgtAlly) && !sphereFactions.Remove(generateContract.ContractTgtAlly))
+            {
+                Logger.Log("WARNING: GenerateContract.ContractTgtAlly may have been removed already: " + generateContract.ContractTgtAlly);
+            }
+            findSystemFaction.Clear();
+
+            if (generateContract.ContractEmployer == "" || employerName == "INVALID_UNSET" || employerName != "")
+            {
+                if (employerName != "" && employerName != "INVALID_UNSET")
+                {
+                    if (sphereFactions.Contains(employerName))
+                    {
+                        generateContract.ContractEmployer = employerName;
+                    }
+                    else // Doesn't exist in lists so ignore parameter
+                    {
+                        employerName = "";
+                    }
+                }
+                // NOT AN ELSE because the above may fail to be legitimate employerName
+                if (generateContract.ContractEmployer == "" || employerName == "INVALID_UNSET")
+                {
+                    foreach (string contractEmployerID in originSystem.Def.ContractEmployerIDList)
+                        {
+                            if (sphereFactions.Contains(contractEmployerID))
+                                findSystemFaction.Add(contractEmployerID);
+                        }
+                    if (findSystemFaction.Count > 0)
+                    {
+                        if (generateContract.ContractTarget.Equals(""))
+                            generateContract.ContractEmployer = findSystemFaction.GetRandomElement();
+                        else
+                            generateContract.ContractEmployer = findSystemFaction.Where(x => !GetFactionValueFromString(generateContract.ContractTarget).FactionDef.Allies.Contains(x)).GetRandomElement();
+                    }
+                    else
+                    {
+                        if (generateContract.ContractTarget.Equals(""))
+                            generateContract.ContractEmployer = sphereFactions.GetRandomElement();
+                        else
+                            generateContract.ContractEmployer = sphereFactions.Where(x => !GetFactionValueFromString(generateContract.ContractTarget).FactionDef.Allies.Contains(x)).GetRandomElement();
+                    }
+                }
+            }
+            if (!clanFactions.Remove(generateContract.ContractEmployer) && !sphereFactions.Remove(generateContract.ContractEmployer) && !bEmpRemoved)
+            {
+                Logger.Log("ERROR: GenerateContract.ContractEmployer does not have a valid value: " + generateContract.ContractEmployer);
+            }
+            findSystemFaction.Clear();
+
+            if (generateContract.ContractEmpAlly == "" || empAllyName == "INVALID_UNSET" || empAllyName != "")
+            {
+                if (empAllyName != "" && empAllyName != "INVALID_UNSET")
+                {
+                    if (sphereFactions.Contains(empAllyName))
+                    {
+                        generateContract.ContractEmpAlly = empAllyName;
+                    }
+                    else // Doesn't exist in lists so ignore parameter
+                    {
+                        empAllyName = "";
+                    }
+                }
+                // NOT AN ELSE because the above may fail to be legitimate targetName
+                if (generateContract.ContractEmpAlly == "" || empAllyName == "INVALID_UNSET")
+                {
+                    if (generateContract.ContractEmployer != "")
+                    {
+                        FactionValue tmpFactionValue = FactionEnumeration.GetFactionByName(generateContract.ContractEmployer);
+                        foreach (string contractEmployerID in tmpFactionValue.FactionDef.Allies)
+                        {
+                            if (sphereFactions.Contains(contractEmployerID))
+                                findSystemFaction.Add(contractEmployerID);
+                        }
+                        if (findSystemFaction.Count > 0)
+                        {
+                            generateContract.ContractEmpAlly = findSystemFaction.GetRandomElement();
+                        }
+                        else
+                        {
+                            generateContract.ContractEmpAlly = sphereFactions.GetRandomElement();
+                        }
+                    }
+                    else
+                    {
+                        Logger.Log("ERROR: GenerateContract.ContractEmployer does not have a value: " + generateContract.ContractEmployer);
+                        return false;
+                    }
+                }
+            }
+            if (!clanFactions.Remove(generateContract.ContractEmpAlly) && !sphereFactions.Remove(generateContract.ContractEmpAlly))
+            {
+                Logger.Log("WARNING: GenerateContract.ContractEmpAlly may have been removed already: " + generateContract.ContractEmpAlly);
+            }
+            findSystemFaction.Clear();
+
+            if (generateContract.ContractHtlToAll == "" || hostileToAll == "INVALID_UNSET" || hostileToAll != "")
+            {
+                if (hostileToAll != "" && hostileToAll != "INVALID_UNSET")
+                {
+                    if (sphereFactions.Contains(hostileToAll))
+                    {
+                        generateContract.ContractHtlToAll = hostileToAll;
+                    }
+                    else // Doesn't exist in lists so ignore parameter
+                    {
+                        hostileToAll = "";
+                    }
+                }
+                // NOT AN ELSE because the above may fail to be legitimate targetName
+                if (generateContract.ContractHtlToAll == "" || hostileToAll == "INVALID_UNSET")
+                {
+                    if (generateContract.ContractEmployer != "" && generateContract.ContractTarget != "")
+                    {
+                        FactionValue tmpFactionEnemy = FactionEnumeration.GetFactionByName(generateContract.ContractEmployer);
+                        FactionValue tmpFactionAlly = FactionEnumeration.GetFactionByName(generateContract.ContractTarget);
+                        foreach (string contractEmpEnemyID in tmpFactionEnemy.FactionDef.Enemies)
+                        {
+                            if (!tmpFactionAlly.FactionDef.Allies.Contains(contractEmpEnemyID))
+                            {
+                                if (targetSystem.OwnerValue.IsClan)
+                                {
+                                    if (clanFactions.Contains(contractEmpEnemyID))
+                                        findSystemFaction.Add(contractEmpEnemyID);
+                                }
+                                else if (sphereFactions.Contains(contractEmpEnemyID))
+                                {
+                                    findSystemFaction.Add(contractEmpEnemyID);
+                                }
+                            }
+                        }
+                        tmpFactionEnemy = FactionEnumeration.GetFactionByName(generateContract.ContractTarget);
+                        tmpFactionAlly = FactionEnumeration.GetFactionByName(generateContract.ContractEmployer);
+                        foreach (string contractTgtEnemyID in tmpFactionEnemy.FactionDef.Enemies)
+                        {
+                            if (!tmpFactionAlly.FactionDef.Allies.Contains(contractTgtEnemyID))
+                            {
+                                if (targetSystem.OwnerValue.IsClan)
+                                {
+                                    if (clanFactions.Contains(contractTgtEnemyID))
+                                        findSystemFaction.Add(contractTgtEnemyID);
+                                }
+                                else if (sphereFactions.Contains(contractTgtEnemyID))
+                                {
+                                    findSystemFaction.Add(contractTgtEnemyID);
+                                }
+                            }
+                        }
+                        if (findSystemFaction.Count > 0)
+                        {
+                            generateContract.ContractHtlToAll = findSystemFaction.GetRandomElement();
+                        }
+                        else if (targetSystem.OwnerValue.IsClan)
+                        {
+                            generateContract.ContractHtlToAll = clanFactions.GetRandomElement();
+                        }
+                        else
+                        {
+                            generateContract.ContractHtlToAll = sphereFactions.GetRandomElement();
+                        }
+                    }
+                    else
+                    {
+                        Logger.Log("ERROR: Missing key GenerateContract values: ContractEmployer - " + generateContract.ContractEmployer + " || ContractEmployer - " + generateContract.ContractTarget);
+                        return false;
+                    }
+                }
+            }
+            if (!clanFactions.Remove(generateContract.ContractHtlToAll) && !sphereFactions.Remove(generateContract.ContractHtlToAll))
+            {
+                Logger.Log("WARNING: GenerateContract.ContractHtlToAll may have been removed already: " + generateContract.ContractHtlToAll);
+            }
+            return true;
+        }
+        
         public static FactionValue GetFactionValueFromString(string factionID)
         {
             FactionValue result = FactionEnumeration.GetInvalidUnsetFactionValue();

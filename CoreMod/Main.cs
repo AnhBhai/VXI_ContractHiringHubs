@@ -3,11 +3,12 @@ using System.Collections;
 using System.Reflection;
 using Harmony;
 using Newtonsoft.Json;
-using static VXIContractHiringHubs.Logger;
+using Helpers;
+using static VXIContractHiringHubs.MercGuildDictionary;
 
 namespace VXIContractHiringHubs
 {
-    public static class Core
+    public static class Main
     {
         #region Init
 
@@ -27,15 +28,25 @@ namespace VXIContractHiringHubs
             }
 
             // blank the logfile
-            Clear();
-            Logger.Log("VXIContractHiringHubs DIR: " + modDir);
+            Log.Clear();
+            Log.Info("VXIContractHiringHubs DIR: " + modDir);
             PrintObjectFields(Settings, "Settings");
+
+            try
+            {
+                BuildAllDictionaries();
+                //PrepareDialogues(-99);
+            }
+            catch (Exception e)
+            {
+                Log.Error(e);
+            }
             
         }
         // logs out all the settings and their values at runtime
         internal static void PrintObjectFields(object obj, string name)
         {
-            LogDebug($"[START {name}]");
+            Log.Debug($"[START {name}]");
 
             var settingsFields = typeof(ModSettings)
                 .GetFields(BindingFlags.Public | BindingFlags.Instance | BindingFlags.Static);
@@ -44,24 +55,24 @@ namespace VXIContractHiringHubs
                 if (field.GetValue(obj) is IEnumerable &&
                     !(field.GetValue(obj) is string))
                 {
-                    LogDebug(field.Name);
+                    Log.Debug(field.Name);
                     foreach (var item in (IEnumerable)field.GetValue(obj))
                     {
-                        LogDebug("\t" + item);
+                        Log.Debug("\t" + item);
                     }
                 }
                 else
                 {
-                    LogDebug($"{field.Name,-30}: {field.GetValue(obj)}");
+                    Log.Debug($"{field.Name,-30}: {field.GetValue(obj)}");
                 }
             }
 
-            LogDebug($"[END {name}]");
+            Log.Debug($"[END {name}]");
         }
 
         #endregion
 
-        internal static ModSettings Settings;        
+        internal static ModSettings Settings;
     }
     
 }

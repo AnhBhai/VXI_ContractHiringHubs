@@ -30,23 +30,8 @@ namespace VXIContractManagement
 {
     public class GenerateContract
     {
-        public string ContractEmployer { get; set; }
-        public string ContractTarget { get; set; }
-        public string ContractEmpAlly { get; set; }
-        public string ContractTgtAlly { get; set; }
-        public string ContractNtlToAll { get; set; }
-        public string ContractHtlToAll { get; set; }
-
+        // Generate Contract Settings
         public int MaxContracts { get; set; }
-        public int MinDifficulty { get; set; }
-        public int MaxDifficulty { get; set; }
-        public int ActualDifficulty { get; set; }
-        public float SalaryPct { get; set; }
-        public float SalvagePct { get; set; }
-        public string LongDescriptionStart { get; set; }
-        public bool IsGlobal { get; set; }
-        public bool IsNegotiable { get; set; }
-
         public bool BuffSalvage { get; set; }
         public bool strictTargetReq { get; set; }
         public bool strictEmployerReq { get; set; }
@@ -54,7 +39,32 @@ namespace VXIContractManagement
         public bool strictNeutralReq { get; set; }
         public bool strictHostileReq { get; set; }
 
-        public bool IsInitialized;
+        // Contract Factions
+        public string ContractEmployer { get; set; }
+        public string ContractTarget { get; set; }
+        public string ContractEmpAlly { get; set; }
+        public string ContractTgtAlly { get; set; }
+        public string ContractNtlToAll { get; set; }
+        public string ContractHtlToAll { get; set; }
+        public string TargetOverride { get; set; }
+        public string EmployerOverride { get; set; }
+
+        // Contract Creation Settings
+        public int MinDifficulty { get; set; }
+        public int MaxDifficulty { get; set; }
+        public float SalaryPct { get; set; }
+        public float SalvagePct { get; set; }
+        public bool IsGlobal { get; set; }
+        public bool IsNegotiable { get; set; }
+
+        // Dialogue Overrides
+        public string LongDescriptionStart { get; set; } // Created for MercGuild Travel Contracts
+        public string ShortDescriptionStart { get; set; } // Created for MercDeployments Environment.NewLine
+        public string EmployerShortDescription { get; set; } // Created for MercDeployments
+        public string DariusLongDescription { get; set; } // Created for MercDeployments
+        public string ContractID { get; set; } // Created for MercDeployments
+        public bool IsDeployment { get; set; } // Created for MercDeployments
+
         public GenerateContract()
         {
             ContractEmployer = "";
@@ -63,15 +73,21 @@ namespace VXIContractManagement
             ContractTgtAlly = "";
             ContractNtlToAll = "";
             ContractHtlToAll = "";
+            TargetOverride = "";
+            EmployerOverride = "";
             MaxContracts = 1;
             MinDifficulty = 1;
             MaxDifficulty = 1;
-            ActualDifficulty = -1;
             SalaryPct = 0.5f;
             SalvagePct = 0.5f;
             LongDescriptionStart = "";
+            ShortDescriptionStart = "";
+            EmployerShortDescription = "";
+            DariusLongDescription = "";
+            ContractID = "";
             IsGlobal = false;
             IsNegotiable = true;
+            IsDeployment = false;
 
             BuffSalvage = false;
 
@@ -80,23 +96,21 @@ namespace VXIContractManagement
             strictOwnerReq = false;
             strictNeutralReq = false;
             strictHostileReq = false;
-
-            IsInitialized = true;
         }
 
-        public GenerateContract(SimGameState.AddContractData addContractData)
-        {
-            ContractEmployer = addContractData.Employer;
-            ContractTarget = addContractData.Target;
-            ContractEmpAlly = addContractData.EmployerAlly;
-            ContractTgtAlly = addContractData.TargetAlly;
-            ContractNtlToAll = addContractData.NeutralToAll;
-            ContractHtlToAll = addContractData.HostileToAll;
-            MaxContracts = 1;
-            ActualDifficulty = addContractData.Difficulty;
+        //public GenerateContract(SimGameState.AddContractData addContractData)
+        //{
+        //    ContractEmployer = addContractData.Employer;
+        //    ContractTarget = addContractData.Target;
+        //    ContractEmpAlly = addContractData.EmployerAlly;
+        //    ContractTgtAlly = addContractData.TargetAlly;
+        //    ContractNtlToAll = addContractData.NeutralToAll;
+        //    ContractHtlToAll = addContractData.HostileToAll;
+        //    MaxContracts = 1;
+        //    ActualDifficulty = addContractData.Difficulty;
             
-            IsInitialized = true;
-        }
+        //    IsInitialized = true;
+        //}
 
         private class ContractDifficultyRange
         {
@@ -246,18 +260,28 @@ namespace VXIContractManagement
             return true;
         }
 
-        public Contract CreateCustomTravelContract(SimGameState simGame, SimGameState.AddContractData addContractData, ContractOverride ovr, GameContext context, BiomeSkin_MDD biomeSkin_MDD)
+        public ContractOverride BuildOverride(ContractOverride ovr, int travelSeed)
         {
-            StarSystem starSystem = context.GetObject(GameContextObjectTagEnum.TargetStarSystem) as StarSystem;
-            int travelSeed = simGame.NetworkRandom.Int(0, int.MaxValue);
-            double dblBuffSalvage = 0;
+            ContractOverride contractOverride = new ContractOverride();
+
+            contractOverride = ovr.Copy();
+            contractOverride.travelOnly = false;
+            contractOverride.useTravelCostPenalty = false;
+            contractOverride.disableNegotations = !this.IsNegotiable;
+            contractOverride.negotiatedSalary = this.SalaryPct;
+            contractOverride.negotiatedSalvage = this.SalvagePct;
+            contractOverride.travelSeed = travelSeed;
+
+            return contractOverride;
+        }
+
+        public ContractOverride BuildTravelOverride(ContractOverride ovr, int travelSeed, SimGameState.AddContractData addContractData, StarSystem starSystem, out SimGameResultAction simGameResultAction)
+        {
+            ovr.FullRehydrate();
             ContractOverride contractOverride = new ContractOverride();
             contractOverride.CopyContractTypeData(ovr);
-            ovr.FullRehydrate();
             contractOverride.contractName = ovr.contractName;
             contractOverride.difficulty = ovr.difficulty;
-            contractOverride.longDescription = this.LongDescriptionStart + ovr.longDescription;
-            contractOverride.shortDescription = ovr.shortDescription;
             contractOverride.travelOnly = true;
             contractOverride.useTravelCostPenalty = true;
             contractOverride.disableNegotations = !this.IsNegotiable;
@@ -266,21 +290,9 @@ namespace VXIContractManagement
             contractOverride.contractRewardOverride = ovr.contractRewardOverride;
             contractOverride.negotiatedSalary = this.SalaryPct;
             contractOverride.negotiatedSalvage = this.SalvagePct;
-            //Traverse.Create(contractOverride).Property("ID").SetValue(ovr.ID);
-            contractOverride.travelSeed = travelSeed;
 
-            if (this.BuffSalvage && contractOverride.salvagePotential > 0) // Add logarithmic formula to add generous salvage [1 + sqrt(1+8n)] / 2 where n = existing salvage
-                dblBuffSalvage = (1 + Math.Sqrt(1 + (8 * contractOverride.salvagePotential))) / 2; // goes from +2 for 1,2 up to +8 for 29,...,36
-            else
-                dblBuffSalvage = 0.0;
-            
-            //contractOverride.difficultyUIModifier = ovr.difficultyUIModifier;
-            int baseDiff = starSystem.Def.GetDifficulty(simGame.SimGameMode) + Mathf.FloorToInt(simGame.GlobalDifficulty);
-            int min = this.MinDifficulty;
-            int max = this.MinDifficulty;
-            int difficulty2 = simGame.NetworkRandom.Int(min, max + 1);
             SimGameEventResult simGameEventResult = new SimGameEventResult();
-            SimGameResultAction simGameResultAction = new SimGameResultAction();
+            simGameResultAction = new SimGameResultAction();
             int num2 = 14;
             simGameResultAction.Type = SimGameResultAction.ActionType.System_StartNonProceduralContract;
             simGameResultAction.value = addContractData.Map;
@@ -303,9 +315,50 @@ namespace VXIContractManagement
             simGameEventResult.Actions[0] = simGameResultAction;
             contractOverride.OnContractSuccessResults.Add(simGameEventResult);
 
+            return contractOverride;
+        }
 
-            Logger.Log(" Contract(" + addContractData.Map + ", " + addContractData.MapPath + ", " + addContractData.EncounterGuid + ", " + contractOverride.ContractTypeValue + ", " + simGame.BattleTechGame + ", " + contractOverride + ", " + simGame.Context + ", " + true + ", " + difficulty2 + ", 0, null );");
-            Contract contract = new Contract(addContractData.Map, addContractData.MapPath, addContractData.EncounterGuid, contractOverride.ContractTypeValue, simGame.BattleTechGame, contractOverride, context, true, difficulty2, 0, null)
+        public Contract CreateCustomContract(SimGameState simGame, SimGameState.AddContractData addContractData, ContractOverride ovr, GameContext context, BiomeSkin_MDD biomeSkin_MDD, bool isTravel = false)
+        {
+            StarSystem starSystem = context.GetObject(GameContextObjectTagEnum.TargetStarSystem) as StarSystem;
+            int travelSeed = simGame.NetworkRandom.Int(0, int.MaxValue);
+            double dblBuffSalvage = 0;
+            ContractOverride contractOverride = new ContractOverride();
+            SimGameResultAction simGameResultAction = new SimGameResultAction();
+            if (isTravel)
+                contractOverride = BuildTravelOverride(ovr, travelSeed, addContractData, starSystem, out simGameResultAction);
+            else
+                contractOverride = BuildOverride(ovr, travelSeed);
+
+            if (!this.EmployerShortDescription.Equals(""))
+                contractOverride.shortDescription = this.ShortDescriptionStart + this.EmployerShortDescription;
+            else
+                contractOverride.shortDescription = this.ShortDescriptionStart + ovr.shortDescription;
+
+            if (!this.DariusLongDescription.Equals(""))
+                contractOverride.longDescription = this.LongDescriptionStart + this.DariusLongDescription;
+            else
+                contractOverride.longDescription = this.LongDescriptionStart + ovr.longDescription;
+
+            if (this.TargetOverride != "")
+                contractOverride.targetTeam.faction = this.TargetOverride;
+
+            if (this.EmployerOverride != "")
+                contractOverride.employerTeam.faction = this.EmployerOverride;
+
+            if (this.BuffSalvage && contractOverride.salvagePotential > 0) // Add logarithmic formula to add generous salvage [1 + sqrt(1+8n)] / 2 where n = existing salvage
+                dblBuffSalvage = (1 + Math.Sqrt(1 + (8 * contractOverride.salvagePotential))) / 2; // goes from +2 for 1,2 up to +8 for 29,...,36
+            else
+                dblBuffSalvage = 0.0;
+            
+            //contractOverride.difficultyUIModifier = ovr.difficultyUIModifier;
+            int baseDiff = starSystem.Def.GetDifficulty(simGame.SimGameMode) + Mathf.FloorToInt(simGame.GlobalDifficulty);
+            int min = this.MinDifficulty;
+            int max = this.MinDifficulty;
+            int difficulty = simGame.NetworkRandom.Int(min, max + 1);
+
+            Logger.Log(" Contract(" + addContractData.Map + ", " + addContractData.MapPath + ", " + addContractData.EncounterGuid + ", " + contractOverride.ContractTypeValue + ", " + simGame.BattleTechGame + ", " + contractOverride + ", " + simGame.Context + ", " + true + ", " + difficulty + ", 0, null );");
+            Contract contract = new Contract(addContractData.Map, addContractData.MapPath, addContractData.EncounterGuid, contractOverride.ContractTypeValue, simGame.BattleTechGame, contractOverride, context, true, difficulty, 0, null)
             {
                 Override =
                 {
@@ -323,16 +376,16 @@ namespace VXIContractManagement
             factionValueTgtAlly = (factionValueTgtAlly.IsInvalidUnset ? factionValueTarget : factionValueTgtAlly);
             factionValueEmpAlly = (factionValueEmpAlly.IsInvalidUnset ? factionValueEmployer : factionValueEmpAlly);
 
-            //contract.PercentageContractValue = this.SalaryPct;
-            //contract.PercentageContractSalvage = this.SalvagePct;
-            ////Traverse.Create(contract).Property("OverrideID").SetValue(ovr.ID);
+
+            //contract.Override.contract = contract;
+            //contract.Override.GenerateUnits(contract.DataManager, simGame.CurrentDate, simGame.CompanyTags);
 
             Logger.Log(" PrepContract(" + contract + ", " + factionValueEmployer + ", " + factionValueEmpAlly + ", " + factionValueTarget + ", " + factionValueTgtAlly + ", " + factionValueNeutral + ", " + factionValueHstToAll + ", " + biomeSkin_MDD.BiomeSkin + ", " + contract.Override.travelSeed + ", " + starSystem + ");");
             simGame.PrepContract(contract, factionValueEmployer, factionValueEmpAlly, factionValueTarget, factionValueTgtAlly, factionValueNeutral, factionValueHstToAll, biomeSkin_MDD.BiomeSkin, contract.Override.travelSeed, starSystem);
 
             string seedGUID = contract.Override.travelSeed + contract.encounterObjectGuid;
-            if(!addContractData.IsGlobal)
-                NonGlobalTravelContracts.AddTravelContract(seedGUID, simGameResultAction, this.SalaryPct, this.SalvagePct);
+            if(!addContractData.IsGlobal && isTravel)
+                NonGlobalTravelContracts.AddTravelContract(seedGUID, simGameResultAction, this.SalaryPct, this.SalvagePct, this.IsDeployment);
             
             return contract;
             
@@ -378,6 +431,29 @@ namespace VXIContractManagement
                 }
             }
             return validMapsEncountersContracts;
+        }
+        
+        public List<MapAndEncounters> GetListOfMapsEncountersContracts(SimGameState simGame, StarSystem system, ContractOverride ovr, WeightedList<MapAndEncounters> mapEncounterList)
+        {
+            List<MapAndEncounters> validMapsEncounters = new List<MapAndEncounters>();
+            foreach (MapAndEncounters eachMapAndEncounters in mapEncounterList)
+                    {
+                if (!validMapsEncounters.Contains(eachMapAndEncounters))
+                {
+                    List<ContractOverride> tempContractOvr = new List<ContractOverride>();
+                    foreach (EncounterLayer_MDD eachEncounterLayer_MDD in eachMapAndEncounters.Encounters)
+                    {
+                        if (eachEncounterLayer_MDD.ContractTypeRow.ContractTypeID == (long)ovr.ContractTypeValue.ID)
+                        {
+                            if (DoesContractMeetRequirements(simGame, system, eachMapAndEncounters, ovr))
+                            {
+                                validMapsEncounters.Add(eachMapAndEncounters);
+                            }
+                        }
+                    }
+                }
+            }
+            return validMapsEncounters;
         }
 
         public void GetEmployerTargetComparisons(IEnumerable<ComparisonDef> comparisons, out List<ComparisonDef> employer, out List<ComparisonDef> target, out List<ComparisonDef> neutralToAll, out List<ComparisonDef> hostileToAll)
@@ -497,8 +573,15 @@ namespace VXIContractManagement
             return returnValue;
         }
 
+        public Dictionary<int, List<ContractOverride>> ListProceduralContracts(SimGameState simGame)
+        {
+            ContractDifficultyRange difficultyRange = new ContractDifficultyRange(this.MinDifficulty, this.MaxDifficulty, GetDifficultyEnumFromValue(this.MinDifficulty), GetDifficultyEnumFromValue(this.MaxDifficulty));
+            Dictionary<int, List<ContractOverride>> potentialContracts = GetSinglePlayerProceduralContractOverrides(difficultyRange, simGame);
+            
+            return potentialContracts;
+        }
 
-        public int GeneratePotentialContracts(SimGameState simGame, StarSystem targetSystem, bool clearExistingContracts, bool canNegotiate, bool isGlobal)
+        public int BuildProceduralContracts(SimGameState simGame, StarSystem targetSystem, bool clearExistingContracts, ContractOverride ovr, bool canNegotiate = true, bool isGlobal = false)
         {
             int debugCount = 0;
             bool usingBreadcrumbs = targetSystem != null;
@@ -526,13 +609,13 @@ namespace VXIContractManagement
 
             this.IsGlobal = isGlobal;
             this.IsNegotiable = canNegotiate;
-            
+
             Logger.Log("Get Playables for: " + " [ MaxC-" + this.MaxContracts + " | MinD-" + this.MinDifficulty + " | MaxD-" + this.MaxDifficulty + " | Tgt-" + this.ContractTarget + " | TgA-" + this.ContractTgtAlly + " | Emp-" + this.ContractEmployer + " | EmA-" + this.ContractEmpAlly + " | H2A-" + this.ContractHtlToAll + " ]");
 
             WeightedList<MapAndEncounters> playableMaps = GetSinglePlayerProceduralPlayableMaps(system);
-            
+
             ContractDifficultyRange difficultyRange = new ContractDifficultyRange(this.MinDifficulty, this.MaxDifficulty, GetDifficultyEnumFromValue(this.MinDifficulty), GetDifficultyEnumFromValue(this.MaxDifficulty));
-            Dictionary<int, List<ContractOverride>> potentialContracts = GetSinglePlayerProceduralContractOverrides(difficultyRange, simGame);
+            //Dictionary<int, List<ContractOverride>> potentialContracts = GetSinglePlayerProceduralContractOverrides(difficultyRange, simGame);
 
             if (!HasValidMaps(system, playableMaps))
             {
@@ -546,8 +629,6 @@ namespace VXIContractManagement
                 debugCount = num + 1;
                 IEnumerable<int> source = from map in playableMaps
                                           select map.Map.Weight;
-                
-                //FactionValue factionHostile = FactionEnumeration.GetHostileMercenariesFactionValue();
 
                 GameContext gameContext = new GameContext(simGame.Context);
                 gameContext.SetObject(GameContextObjectTagEnum.TargetStarSystem, system);
@@ -556,18 +637,18 @@ namespace VXIContractManagement
                 ContractOverride finalContractOvr = new ContractOverride();
                 WeightedList<MapAndEncounters> mapEncounterList = new WeightedList<MapAndEncounters>(WeightedListType.WeightedRandom, playableMaps.ToList(), source.ToList<int>(), 0);
 
-                Dictionary<MapAndEncounters, List<ContractOverride>> validMapsEncountersContracts = this.GetListOfMapsEncountersContracts(simGame, system, potentialContracts, mapEncounterList);
-                
+                List<MapAndEncounters> validMapsEncountersContracts = this.GetListOfMapsEncountersContracts(simGame, system, ovr, mapEncounterList);
+
                 if (validMapsEncountersContracts.Count > 0)
                 {
-                    finalMapEncounter = validMapsEncountersContracts.Keys.GetRandomElement();
-                    finalContractOvr = validMapsEncountersContracts[finalMapEncounter].GetRandomElement<ContractOverride>();
+                    finalMapEncounter = validMapsEncountersContracts.GetRandomElement();
+                    finalContractOvr = ovr;
                 }
                 else
                 {
                     return contractList.Count;
                 }
-                
+
                 List<EncounterLayer_MDD> list = new List<EncounterLayer_MDD>();
                 foreach (EncounterLayer_MDD encounterLayer_MDD in finalMapEncounter.Encounters)
                 {
@@ -590,21 +671,119 @@ namespace VXIContractManagement
                 addContractData.Map = finalMapEncounter.Map.MapName;
                 addContractData.MapPath = finalMapEncounter.Map.MapPath;
                 addContractData.ContractName = finalContractOvr.ID;
-                
+
                 Logger.Log("AddContractData: " + " [ Sys-" + addContractData.TargetSystem + " | Gbl-" + addContractData.IsGlobal + " | Map-" + addContractData.Map + " | CtN-" + addContractData.ContractName + " | GUID-" + addContractData.EncounterGuid + " ] ");
                 Logger.Log("With the following Factions: " + "[ Tgt-" + addContractData.Target + " | TgA-" + addContractData.TargetAlly + " | Emp-" + addContractData.Employer + " | EmA-" + addContractData.EmployerAlly + " | H2A-" + addContractData.HostileToAll + " ] ");
                 Logger.Log("And the additional Details: " + " [ DNeg-" + finalContractOvr.disableNegotations + " | Sly-" + finalContractOvr.negotiatedSalary + " | Svg-" + finalContractOvr.negotiatedSalvage + " ] ");
 
-                if (usingBreadcrumbs)
+                Contract contract = this.CreateCustomContract(simGame, addContractData, finalContractOvr, gameContext, finalMapEncounter.Map.BiomeSkinEntry, usingBreadcrumbs);
+                contractList.Add(contract);
+            }
+            if (debugCount >= 20)
+            {
+                SimGameState.logger.LogWarning("METHOD GeneratePotentialContracts() :: made 20 unsuccesful attempts to create a contract");
+            }
+            return contractList.Count;
+        }
+        public int GenerateProceduralContracts(SimGameState simGame, StarSystem targetSystem, bool clearExistingContracts, bool canNegotiate = true, bool isGlobal = false)
+        {
+            int debugCount = 0;
+            bool usingBreadcrumbs = targetSystem != null;
+
+            StarSystem system;
+            List<Contract> contractList;
+
+            if (usingBreadcrumbs) // Travel Contracts
+            {
+                system = targetSystem;
+                contractList = simGame.CurSystem.SystemBreadcrumbs;
+            }
+            else // Non Travel Contract
+            {
+                system = simGame.CurSystem;
+                contractList = simGame.CurSystem.SystemContracts;
+            }
+
+            if (clearExistingContracts)
+            {
+                Logger.Log("Clearing Contracts CL:" + contractList.Count + "|GC:" + simGame.GlobalContracts.Count + "|BC:" + simGame.CurSystem.SystemBreadcrumbs.Count + "|SC:" + simGame.CurSystem.SystemContracts.Count);
+                contractList.Clear();
+                Logger.Log("Cleared Contracts CL:" + contractList.Count + "|GC:" + simGame.GlobalContracts.Count + "|BC:" + simGame.CurSystem.SystemBreadcrumbs.Count + "|SC:" + simGame.CurSystem.SystemContracts.Count);
+            }
+
+            this.IsGlobal = isGlobal;
+            this.IsNegotiable = canNegotiate;
+
+            Logger.Log("Get Playables for: " + " [ MaxC-" + this.MaxContracts + " | MinD-" + this.MinDifficulty + " | MaxD-" + this.MaxDifficulty + " | Tgt-" + this.ContractTarget + " | TgA-" + this.ContractTgtAlly + " | Emp-" + this.ContractEmployer + " | EmA-" + this.ContractEmpAlly + " | H2A-" + this.ContractHtlToAll + " ]");
+
+            WeightedList<MapAndEncounters> playableMaps = GetSinglePlayerProceduralPlayableMaps(system);
+
+            ContractDifficultyRange difficultyRange = new ContractDifficultyRange(this.MinDifficulty, this.MaxDifficulty, GetDifficultyEnumFromValue(this.MinDifficulty), GetDifficultyEnumFromValue(this.MaxDifficulty));
+            Dictionary<int, List<ContractOverride>> potentialContracts = GetSinglePlayerProceduralContractOverrides(difficultyRange, simGame);
+
+            if (!HasValidMaps(system, playableMaps))
+            {
+                return 0;
+            }
+
+            Logger.Log("BUILD CONTRACT");
+            while (contractList.Count < this.MaxContracts && debugCount < 20)
+            {
+                int num = debugCount;
+                debugCount = num + 1;
+                IEnumerable<int> source = from map in playableMaps
+                                          select map.Map.Weight;
+
+                //FactionValue factionHostile = FactionEnumeration.GetHostileMercenariesFactionValue();
+
+                GameContext gameContext = new GameContext(simGame.Context);
+                gameContext.SetObject(GameContextObjectTagEnum.TargetStarSystem, system);
+
+                MapAndEncounters finalMapEncounter = new MapAndEncounters();
+                ContractOverride finalContractOvr = new ContractOverride();
+                WeightedList<MapAndEncounters> mapEncounterList = new WeightedList<MapAndEncounters>(WeightedListType.WeightedRandom, playableMaps.ToList(), source.ToList<int>(), 0);
+
+                Dictionary<MapAndEncounters, List<ContractOverride>> validMapsEncountersContracts = this.GetListOfMapsEncountersContracts(simGame, system, potentialContracts, mapEncounterList);
+
+                if (validMapsEncountersContracts.Count > 0)
                 {
-                    Contract travelItem = this.CreateCustomTravelContract(simGame, addContractData, finalContractOvr, gameContext, finalMapEncounter.Map.BiomeSkinEntry);
-                    contractList.Add(travelItem);
+                    finalMapEncounter = validMapsEncountersContracts.Keys.GetRandomElement();
+                    finalContractOvr = validMapsEncountersContracts[finalMapEncounter].GetRandomElement<ContractOverride>();
                 }
                 else
                 {
-                    Contract proceduralItem = simGame.AddContract(addContractData);
-                    contractList.Add(proceduralItem);
+                    return contractList.Count;
                 }
+
+                List<EncounterLayer_MDD> list = new List<EncounterLayer_MDD>();
+                foreach (EncounterLayer_MDD encounterLayer_MDD in finalMapEncounter.Encounters)
+                {
+                    if (encounterLayer_MDD.ContractTypeRow.ContractTypeID == (long)finalContractOvr.ContractTypeValue.ID)
+                    {
+                        list.Add(encounterLayer_MDD);
+                    }
+                }
+                SimGameState.AddContractData addContractData = new SimGameState.AddContractData();
+
+                addContractData.EncounterGuid = list[simGame.NetworkRandom.Int(0, list.Count - 1)].EncounterLayerGUID;
+                addContractData.Target = this.ContractTarget;
+                addContractData.TargetAlly = this.ContractTgtAlly;
+                addContractData.Employer = this.ContractEmployer;
+                addContractData.EmployerAlly = this.ContractEmpAlly;
+                addContractData.NeutralToAll = this.ContractNtlToAll;
+                addContractData.HostileToAll = this.ContractHtlToAll;
+                addContractData.TargetSystem = system.Name;
+                addContractData.IsGlobal = this.IsGlobal;
+                addContractData.Map = finalMapEncounter.Map.MapName;
+                addContractData.MapPath = finalMapEncounter.Map.MapPath;
+                addContractData.ContractName = finalContractOvr.ID;
+
+                Logger.Log("AddContractData: " + " [ Sys-" + addContractData.TargetSystem + " | Gbl-" + addContractData.IsGlobal + " | Map-" + addContractData.Map + " | CtN-" + addContractData.ContractName + " | GUID-" + addContractData.EncounterGuid + " ] ");
+                Logger.Log("With the following Factions: " + "[ Tgt-" + addContractData.Target + " | TgA-" + addContractData.TargetAlly + " | Emp-" + addContractData.Employer + " | EmA-" + addContractData.EmployerAlly + " | H2A-" + addContractData.HostileToAll + " ] ");
+                Logger.Log("And the additional Details: " + " [ DNeg-" + finalContractOvr.disableNegotations + " | Sly-" + finalContractOvr.negotiatedSalary + " | Svg-" + finalContractOvr.negotiatedSalvage + " ] ");
+
+                Contract contract = this.CreateCustomContract(simGame, addContractData, finalContractOvr, gameContext, finalMapEncounter.Map.BiomeSkinEntry, usingBreadcrumbs);
+                contractList.Add(contract);
             }
             if (debugCount >= 20)
             {

@@ -1,13 +1,15 @@
 ﻿using System;
 using System.IO;
 using System.Reflection;
+using VXIContractHiringHubs;
 
-namespace VXIContractHiringHubs
+namespace Helpers
 {
-    public static class Logger
+    public static class Log
     {
         internal static string LogFilePath =>
             Directory.GetParent(Assembly.GetExecutingAssembly().Location).FullName + "\\logfile.txt";
+
 
         public static void Error(Exception ex)
         {
@@ -20,16 +22,16 @@ namespace VXIContractHiringHubs
             }
         }
 
-        public static void LogDebug(string line)
+        public static void Debug(string line)
         {
-            if (!Core.Settings.Debug) return;
+            if (!Main.Settings.Debug) return;
             using (var writer = new StreamWriter(LogFilePath, true))
             {
                 writer.WriteLine(line);
             }
         }
 
-        public static void Log(string line)
+        public static void Info(string line)
         {
             using (var writer = new StreamWriter(LogFilePath, true))
             {
