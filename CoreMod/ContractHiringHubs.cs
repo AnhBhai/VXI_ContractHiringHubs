@@ -160,6 +160,12 @@ namespace VXIContractHiringHubs
                 {
                     if (InfoClass.DeploymentInfo.IsDeployment || InfoClass.MercGuildInfo.IsDeployment)
                     {
+                        if (InfoClass.DeploymentInfo.NoWaveContracts >= Main.Settings.ActiveDeploymentContracts)
+                        {
+                            __instance.CurSystem.ResetContracts();
+                            InfoClass.DeploymentInfo.NoWaveContracts = 0;
+                        }
+
                         if (onContractGenComplete != null)
                         {
                             Traverse.Create(__instance.RoomManager.CmdCenterRoom).Property("holdForNewContract").SetValue(false);

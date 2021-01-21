@@ -125,6 +125,7 @@ namespace Helpers
         public bool IsGenInitContracts = false;
         public int EmployerCosts = 0;
         public int Wave = 0;
+        public int NoWaveContracts = 0;
         public List<string> MissionTypes = new List<string>();
         public MercDeploymentStats MDStats = new MercDeploymentStats(true);
         public Dictionary<string, DeploymentContractInfo> DCInfo = new Dictionary<string, DeploymentContractInfo>();
@@ -137,6 +138,7 @@ namespace Helpers
             IsDeployment = false;
             //IsGenInitContracts = false;
             Wave = 0;
+            NoWaveContracts = 0;
             EmployerCosts = 0;
             MissionTypes.Clear();
             DCInfo.Clear();
@@ -252,6 +254,7 @@ namespace Helpers
                                 InfoClass.DeploymentInfo.IsGenInitContracts = save.IsGenInitContracts;
                                 InfoClass.DeploymentInfo.IsDeployment = save.IsDeployment;
                                 InfoClass.DeploymentInfo.Wave = save.Wave;
+                                InfoClass.DeploymentInfo.NoWaveContracts = save.NoWaveContracts;
                                 InfoClass.DeploymentInfo.EmployerCosts = save.EmployerCosts;
                                 InfoClass.DeploymentInfo.MissionTypes = save.MissionTypes;
                                 InfoClass.DeploymentInfo.MDStats = save.MDStats;

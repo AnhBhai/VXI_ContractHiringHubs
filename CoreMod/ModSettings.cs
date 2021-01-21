@@ -16,9 +16,18 @@ namespace VXIContractHiringHubs
         public int DeploymentAllyPct = 25;
         public int DeploymentSpecialPct = 10;
 
+        public int HonoredMax = 6;
+        public int FriendlyMax = 5;
+        public int LikedMax = 5;
+        public int IndifferentMax = 5;
+        public int DislikedMax = 4;
+        public int LoathedMax = 2;
+        public int HatedMax = 3;
+
+        public Dictionary<string, List<int>> DeploymentChoiceMax = new Dictionary<string, List<int>>();
+
         public int MercGuildContractRefresh = 10;
         public int ReduceDeployChanceDays = 30; // After Beta: 365 days (1 year)
-
 
         public int MercFactionPilotPct = 100;
         public int MajorFactionPilotPct = 50;

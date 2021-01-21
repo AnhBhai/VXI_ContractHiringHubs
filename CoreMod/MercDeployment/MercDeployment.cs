@@ -220,6 +220,9 @@ namespace VXIContractHiringHubs
             simGame.AddFunds(bonusPayment, null, false);
             Log.Info($"Deployment bonus increased funds by {bonusPayment}");
             InfoClass.DeploymentInfo.MDStats.BonusPaid += bonusPayment;
+
+            InfoClass.DeploymentInfo.NoWaveContracts++;
+            Log.Info($"Mission {InfoClass.DeploymentInfo.NoWaveContracts} of Wave {InfoClass.DeploymentInfo.Wave}");
         }
 
         public static void UpdateMDStats(SimGameState simGame, string contractTypeID, string sCategory, string sWho, string sWhy, string sEthics, int difficulty)
@@ -264,74 +267,73 @@ namespace VXIContractHiringHubs
 
         public static void PrintDialogue(ContractOverride ovr, GenerateContract generateContract, string sCategory, string sEthics = "Unknown", string sAttDef = "Unknown")
         {
-            string partDialogue = "";
-            int iTmp = 101;
-            bool bTmp = true;
+            try
+            {
+                string partDialogue = "";
+                int iTmp = 101;
+                bool bTmp = true;
 
-            if (generateContract.ShortDescriptionStart != "")
-            {
-                Log.Info("+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++");
-                Log.Info($"{generateContract.ShortDescriptionStart}");
-            }
-            else
-            {
-                Log.Info("+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++");
-                Log.Info($"+++ Employer : {DeploymentInfo.DeploymentFactionID}");
-                Log.Info($"+++ Contract : {ovr.contractName}");
-                Log.Info($"+++ Target   : Davion");
-                Log.Info($"+++ Biome    : Urban");
-                Log.Info("+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++");
-                Log.Info($"+++  Employer Message  +++ SubType : {sAttDef.ToString()}   +++");
-            }
-            for (int i = 0; i < generateContract.EmployerShortDescription.Length - 1; i += iTmp)
-            {
-                iTmp = 101;
-                if (generateContract.EmployerShortDescription.Length < i + iTmp)
-                    bTmp = false;
-
-                if (bTmp)
+                if (generateContract.ShortDescriptionStart != "")
                 {
-                    partDialogue = generateContract.EmployerShortDescription.Substring(i, iTmp - 1);
-
-                    iTmp = partDialogue.LastIndexOf(' ');
-                    partDialogue = partDialogue.Substring(0, iTmp).TrimStart(' ');
+                    Log.Info("+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++");
+                    Log.Info($"{generateContract.ShortDescriptionStart}");
                 }
                 else
                 {
-                    partDialogue = generateContract.EmployerShortDescription.Substring(i).TrimStart(' ');
-                    iTmp = 101;
+                    Log.Info("+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++");
+                    Log.Info($"+++ Employer : {DeploymentInfo.DeploymentFactionID}");
+                    Log.Info($"+++ Contract : {ovr.contractName}");
                 }
+                for (int i = 0; i < generateContract.EmployerShortDescription.Length - 1; i += iTmp)
+                {
+                    iTmp = 101;
+                    if (generateContract.EmployerShortDescription.Length < i + iTmp)
+                        bTmp = false;
 
-                Log.Info($"+++ {partDialogue}");
+                    if (bTmp)
+                    {
+                        partDialogue = generateContract.EmployerShortDescription.Substring(i, iTmp - 1);
+
+                        iTmp = partDialogue.LastIndexOf(' ');
+                        partDialogue = partDialogue.Substring(0, iTmp).TrimStart(' ');
+                    }
+                    else
+                    {
+                        partDialogue = generateContract.EmployerShortDescription.Substring(i).TrimStart(' ');
+                        iTmp = 101;
+                    }
+
+                    Log.Info($"+++ {partDialogue}");
+                }
+                bTmp = true;
+                Log.Info("+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++");
+                for (int i = 0; i < generateContract.DariusLongDescription.Length - 1; i += iTmp)
+                {
+                    iTmp = 101;
+                    if (generateContract.DariusLongDescription.Length < i + iTmp)
+                        bTmp = false;
+
+                    if (bTmp)
+                    {
+                        partDialogue = generateContract.DariusLongDescription.Substring(i, iTmp - 1);
+
+                        iTmp = partDialogue.LastIndexOf(' ');
+                        partDialogue = partDialogue.Substring(0, iTmp).TrimStart(' ');
+                    }
+                    else
+                    {
+                        partDialogue = generateContract.DariusLongDescription.Substring(i).TrimStart(' ');
+                        iTmp = 101;
+                    }
+
+                    Log.Info($"+++ {partDialogue}");
+                }
+                Log.Info("+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++");
             }
-            bTmp = true;
-            Log.Info("+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++");
-            Log.Info("+++   Darius Message   +++");
-            Log.Info($"+++ Category : {sCategory} ++");
-            Log.Info($"+++ Ethics   : {sEthics}     +++");
-            Log.Info("++++++++++++++++++++++++++");
-            for (int i = 0; i < generateContract.DariusLongDescription.Length - 1; i += iTmp)
+            catch (Exception e)
             {
-                iTmp = 101;
-                if (generateContract.DariusLongDescription.Length < i + iTmp)
-                    bTmp = false;
-
-                if (bTmp)
-                {
-                    partDialogue = generateContract.DariusLongDescription.Substring(i, iTmp - 1);
-
-                    iTmp = partDialogue.LastIndexOf(' ');
-                    partDialogue = partDialogue.Substring(0, iTmp).TrimStart(' ');
-                }
-                else
-                {
-                    partDialogue = generateContract.DariusLongDescription.Substring(i).TrimStart(' ');
-                    iTmp = 101;
-                }
-
-                Log.Info($"+++ {partDialogue}");
+                Log.Error(e);
             }
-            Log.Info("++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++");
         }
 
         public static List<ContractOverride> GetContractDetails(Dictionary<int, List<ContractOverride>> listContractOvr)
@@ -413,14 +415,14 @@ namespace VXIContractHiringHubs
                 bool clearFirst = false;
 
                 Log.Info("Game Date: " + currentDate.ToString("yyyy-MM-dd") + ":: DateHubUpdate: " + DeploymentInfo.DateLastRefresh.ToString("yyyy-MM-dd") + "(" + DeploymentInfo.IsDeployment + ")");
-                if (currentDate > DeploymentInfo.DateLastRefresh.AddDays(Main.Settings.DeploymentContractRefresh) && DeploymentInfo.IsDeployment)
+                if (DeploymentInfo.IsDeployment)
                 {
                     if (currentDate > DeploymentInfo.DateDeploymentEnd)
                     {
+                        simGame.StopPlayMode(); 
                         MercDeployment_End(simGame);
-                        ContractHiringHubs.UpdateTheHubs(simGame);
                     }
-                    else
+                    else if (currentDate > DeploymentInfo.DateLastRefresh.AddDays(Main.Settings.DeploymentContractRefresh))
                     {
 
                         string currentSystem = simGame.CurSystem.Name;
@@ -438,26 +440,11 @@ namespace VXIContractHiringHubs
                         listContractOvr = generateContract.ListProceduralContracts(simGame);
                         Log.Info($"listContractOvr.Count() : {listContractOvr.Count().ToString()}");
                         listContractID = GetContractDetails(listContractOvr);
-                        if (DeploymentInfo.Wave == 0)
-                        {
-                            PauseNotification.Show($"START {Main.Settings.LengthDeploymentDays}DAY DEPLOYMENT", $"Well thats that Commander, I just finished signing us on to complete this {Main.Settings.LengthDeploymentDays}day Deployment for {DeploymentInfo.DeploymentFactionID}.{Environment.NewLine}"
-                                                                                                                + $"Just like a Travel Contract there are some of the usual penalites for breaking a contract.{Environment.NewLine}"
-                                                                                                                + $" If we break the deployment:{Environment.NewLine}"
-                                                                                                                + $" + We will lose partial bonus payments and have to refund any costs that we have covered.{Environment.NewLine}"
-                                                                                                                + $" + More importantly, our reputation with {DeploymentInfo.DeploymentFactionID} and the {FactionEnumeration.GetMercenaryReviewBoardFactionValue().FriendlyName} will be damaged.{Environment.NewLine}"
-                                                                                                                + $" Although they may not be so harsh if we perform most of the deployment.{Environment.NewLine}"
-                                                                                                                + $"{Environment.NewLine}"
-                                                                                                                + $"Further note, we'll get a new set of contracts as we go and we get to select as many or as little as we like. Also, we'll receive contracts from other interested parties but only those endorsed by our employer.{Environment.NewLine}"
-                                                                                                                + $"{Environment.NewLine}"
-                                                                                                                + $"Could be some interesting players on both sides here Commander.", simGame.GetCrewPortrait(SimGameCrew.Crew_Darius), "", true);
-                        }
-
-                        DeploymentInfo.Wave++;
 
                         List<string> listExclude = new List<string>();
                         DeploymentInfo.DCInfo.Clear();
                         //string longDesc = $"We'll be behind enemy lines here, we'll get generous salvage on this contract and our employer will cover jump costs and {PercentageExpenses * 100}% of our operating costs during travel. ";
-                        for (int i = 0; totalMissions < Main.Settings.ActiveDeploymentContracts && i < Main.Settings.ActiveDeploymentContracts * 2; i++)
+                        for (int i = 0; totalMissions < (int)(Main.Settings.ActiveDeploymentContracts * 1.9) && i < Main.Settings.ActiveDeploymentContracts * 3; i++)
                         {
                             Log.Info("");
                             Log.Info("");
@@ -489,10 +476,10 @@ namespace VXIContractHiringHubs
 
                             GenerateContractFactions.setContractFactionsBasedOnRandom(generateContract, simGame, simGame.CurSystem);
 
-                            if (simGame.NetworkRandom.Int(0, 100 + 1) <= Main.Settings.DeploymentAllyPct + (DeploymentInfo.Wave * 3 - 12) && Main.Settings.AlliedFactions.ContainsKey(generateContract.ContractTarget) && DeploymentInfo.Wave > 2)
+                            if (simGame.NetworkRandom.Int(0, 100 + 1) <= Main.Settings.DeploymentAllyPct + (DeploymentInfo.Wave * 3 - 12) && Main.Settings.AlliedFactions.ContainsKey(generateContract.ContractTarget) && Main.Settings.AlliedFactions.ContainsKey(DeploymentInfo.DeploymentFactionID) && DeploymentInfo.Wave > 2)
                             {
                                 generateContract.ContractTgtAlly = generateContract.ContractTarget;
-                                generateContract.ContractTarget = Main.Settings.AlliedFactions[generateContract.ContractTarget].GetRandomElement();
+                                generateContract.ContractTarget = Main.Settings.AlliedFactions[generateContract.ContractTarget].Where(x => !Main.Settings.AlliedFactions[DeploymentInfo.DeploymentFactionID].Contains(x) && !x.Equals(DeploymentInfo.DeploymentFactionID)).GetRandomElement();
                                 generateContract.ShortDescriptionStart += $"OFFWORLD ENEMY]{Environment.NewLine}";
                             }
                             else
@@ -567,9 +554,48 @@ namespace VXIContractHiringHubs
                             totalMissions = noGenMissions;
                             generateContract = new GenerateContract();
                         }
-                        if (totalMissions >= Main.Settings.ActiveDeploymentContracts)
+                        if (totalMissions > Main.Settings.ActiveDeploymentContracts)
+                        {
                             DeploymentInfo.DateLastRefresh = currentDate;
+                            DeploymentInfo.Wave++;
 
+                            simGame.StopPlayMode();
+                            if (DeploymentInfo.Wave == 1)
+                            {
+                                PauseNotification.Show($"START {Main.Settings.LengthDeploymentDays}DAY DEPLOYMENT", $"Well thats that Commander, I just finished signing us on to complete this {Main.Settings.LengthDeploymentDays}day Deployment for {DeploymentInfo.DeploymentFactionID}.{Environment.NewLine}"
+                                                                                                                    + $"Just like a Travel Contract there are some of the usual penalites for breaking a contract.{Environment.NewLine}"
+                                                                                                                    + $" If we break the deployment:{Environment.NewLine}"
+                                                                                                                    + $" + We will lose partial bonus payments and have to refund any costs that we have covered.{Environment.NewLine}"
+                                                                                                                    + $" + More importantly, our reputation with {DeploymentInfo.DeploymentFactionID} and the {FactionEnumeration.GetMercenaryReviewBoardFactionValue().FriendlyName} will be damaged.{Environment.NewLine}"
+                                                                                                                    + $" Although they may not be so harsh if we perform most of the deployment.{Environment.NewLine}"
+                                                                                                                    + $"{Environment.NewLine}"
+                                                                                                                    + $"Further note, we'll get a new set of contracts as we go and we get to select as many or as little as we like. Also, we'll receive contracts from other interested parties but only those endorsed by our employer.{Environment.NewLine}"
+                                                                                                                    + $"{Environment.NewLine}"
+                                                                                                                    + $"Could be some interesting players on both sides here Commander.", simGame.GetCrewPortrait(SimGameCrew.Crew_Darius), "", true);
+                            }
+                            else if (InfoClass.DeploymentInfo.Wave == 2)
+                            {
+                                PauseNotification.Show($"WAVE {InfoClass.DeploymentInfo.Wave}", $"{simGame.Commander.FirstName}, this morning our employer sent us through the plans for Wave number {InfoClass.DeploymentInfo.Wave}."
+                                                                                                + $"  There are {simGame.CurSystem.SystemContracts.Count()} new contracts to choose from."
+                                                                                                + $"  We can choose to do anywhere from 0 to {Main.Settings.ActiveDeploymentContracts} contracts, this wave."
+                                                                                                + $"  Any contracts we cannot get done, our employer will take care of."
+                                                                                                + $"  So I'll be in the command centre to debrief, when you are ready and we can launch the ones that best suit our unit.{Environment.NewLine}" +
+                                                                                                $"{Environment.NewLine}" +
+                                                                                                $"T-Minus {DeploymentInfo.DateDeploymentEnd.Subtract(currentDate).Days + 1} days until the end of our deployment.", simGame.GetCrewPortrait(SimGameCrew.Crew_Darius), "", true);
+                            }
+                            else if (InfoClass.DeploymentInfo.Wave > 3)
+                            {
+                                if (currentDate.AddDays(Main.Settings.DeploymentContractRefresh) < DeploymentInfo.DateDeploymentEnd)
+                                    PauseNotification.Show($"WAVE #{InfoClass.DeploymentInfo.Wave}", $"Wave number {InfoClass.DeploymentInfo.Wave} is ready, {simGame.Commander.Callsign}."
+                                                                                                    + $"  We have {simGame.CurSystem.SystemContracts.Count()} new contracts to choose from and as usual I'll be preparing the logistics in the Command Centre.{Environment.NewLine}"
+                                                                                                    + $"{Environment.NewLine}"
+                                                                                                    + $"T-Minus {DeploymentInfo.DateDeploymentEnd.Subtract(currentDate).Days + 1} days until the end of our deployment.", simGame.GetCrewPortrait(SimGameCrew.Crew_Darius), "", true);
+                                else
+                                    PauseNotification.Show($"FINAL WAVE #{InfoClass.DeploymentInfo.Wave}", $"{simGame.Commander.FirstName}, this is the {AddOrdinal(InfoClass.DeploymentInfo.Wave)} and final wave and I'll be preparing the final {simGame.CurSystem.SystemContracts.Count()} contracts in the Command Centre.{Environment.NewLine}"
+                                                                                                    + $"{Environment.NewLine}"
+                                                                                                    + $"T-Minus {DeploymentInfo.DateDeploymentEnd.Subtract(currentDate).Days + 1} days until the end of our deployment.", simGame.GetCrewPortrait(SimGameCrew.Crew_Darius), "", true);
+                            }
+                        }
                         totalMissions = 0;
                     }
                 }
@@ -627,6 +653,7 @@ namespace VXIContractHiringHubs
                 $"Stay tuned for further information.";
             string msgTitle = "Deployment Ended with Reputation Loss";
 
+            simGame.StopPlayMode();
             PauseNotification.Show(msgTitle, msgText, simGame.GetCrewPortrait(SimGameCrew.Crew_Darius), "", true);
             Log.Info($"{msgTitle} : {InfoClass.DeploymentInfo.DeploymentFactionID} ({-daysRemaining}) and MRB ({-daysRemaining * 2})");
 
@@ -671,35 +698,64 @@ namespace VXIContractHiringHubs
             Log.Info($"{msgTitle} : {msgText}");
             simGame.AddFunds(bonus, null, true);
 
-            List<FactionValue> tmpFactionList = FactionEnumeration.FactionList.Where(f => f.IsGreatHouse).ToList();
-            tmpFactionList = tmpFactionList.Distinct().ToList();
+            List<FactionValue> factionList = FactionEnumeration.FactionList.Where(f => f.DoesGainReputation).ToList();
+            factionList = factionList.Distinct().ToList();
 
             //List<string> sphereHouses = tmpFactionList.ConvertAll(x => x.Name);
-            int repPirate = (int)(repBonus * moralityReward.Value / 100 * 2);
-            int repHouse = (int)(repBonus * moralityReward.Key / 100);
+            int repHouse = (int)(repBonus * repPenalty * moralityReward.Key / 100);
 
             msgTitle = "Reputation Affect";
-            msgText = $"Due to the ethical nature of our missions during this deployment, the other Houses see you and our unit as {houseView}.{Environment.NewLine}";
+            msgText = $"Due to the ethical nature of our missions during this deployment, the other Factions see you and our unit as {houseView}.{Environment.NewLine}";
             
             if (repHouse < 0)
-                msgText += $"This resulted in a loss of {repHouse} reputation with the Great Houses of: {Environment.NewLine}";
+                msgText += $"This resulted in a loss of {repHouse} reputation for ";
             else if (repHouse > 0)
-                msgText += $"This resulted in a gain of {repHouse} reputation with the Great Houses of: {Environment.NewLine}";
+                msgText += $"This resulted in a gain of {repHouse} reputation for ";
             else
-                msgText += $"This resulted in {repHouse} reputation gain with the Great Houses of: {Environment.NewLine}";
+                msgText += $"This resulted in {repHouse} reputation gain with for ";
 
-            int totalHouses = 0;
-            foreach ( FactionValue factionValue in tmpFactionList)
+            List<string> factionString = new List<string>();
+            foreach ( FactionValue factionValue in factionList)
             {
-                if (!factionValue.Name.Equals(InfoClass.DeploymentInfo.DeploymentFactionID) && !factionValue.Name.Equals(Main.Settings.AlliedFactions[InfoClass.DeploymentInfo.DeploymentFactionID][0]))
+                if (Main.Settings.AlliedFactions.ContainsKey(factionValue.Name))
                 {
-                    simGame.SetReputation(factionValue, repHouse, StatCollection.StatOperation.Int_Add, null);
-                    totalHouses++;
-                    msgText += $" + {factionValue.Name}{Environment.NewLine}";
+                    if (Main.Settings.AlliedFactions.ContainsKey(InfoClass.DeploymentInfo.DeploymentFactionID))
+                    {
+                        if (!factionValue.Name.Equals(InfoClass.DeploymentInfo.DeploymentFactionID) && !Main.Settings.AlliedFactions[InfoClass.DeploymentInfo.DeploymentFactionID].Contains(factionValue.Name) && factionValue.DoesGainReputation)
+                        {
+                            simGame.SetReputation(factionValue, repHouse, StatCollection.StatOperation.Int_Add, null);
+                            factionString.Add(factionValue.Name);
+                        }
+                    }
+                    else
+                    {
+                        if (!factionValue.Name.Equals(InfoClass.DeploymentInfo.DeploymentFactionID) && Main.Settings.AlliedFactions.ContainsKey(factionValue.Name))
+                        {
+                            simGame.SetReputation(factionValue, repHouse, StatCollection.StatOperation.Int_Add, null);
+                            factionString.Add(factionValue.Name);
+                        }
+                    }
+                }
+                else
+                {
+                    Log.Info($"Reputation not present for {factionValue.Name}");
                 }
             }
+            if (factionString.Count() > 0)
+            {
+                factionString[factionString.Count() - 1] = $"and {factionString[factionString.Count() - 1]}";
+                msgText += $"{string.Join(", ", factionString.Select(s => $"{s}"))}.{Environment.NewLine}";
+            }
+            else
+            {
+                msgText += $"no one.{Environment.NewLine}";
+            }
+
             Log.Info($"House Reputation change : {repHouse}");
-            
+            int repPirate = (int)(repBonus / repPenalty * moralityReward.Value / 100);
+            if (factionString.Count() > 0)
+                repPirate = (int)(repBonus / repPenalty * moralityReward.Value / 100 * factionString.Count() / 2);
+
             simGame.SetReputation(FactionEnumeration.GetAuriganPiratesFactionValue(), repPirate, StatCollection.StatOperation.Int_Add, null);
             Log.Info($"Pirate Reputation change : {repPirate}");
             if (repPirate < 0)
@@ -709,21 +765,62 @@ namespace VXIContractHiringHubs
             else
                 msgText += $"{Environment.NewLine}This resulted in {repPirate} reputation gain with the Pirates who run the Black Market.{Environment.NewLine}";
 
-            if (repHouse < 0)
+            if (repHouse < 0 && factionString.Count() > 0)
             {
-                repBonus = (int)((totalHouses * (0 - repHouse) - repPirate) * repPenalty / 2);
+                repBonus = (int)(repHouse * 1.2 * repPenalty * moralityReward.Value / 100);
+            }
+            else if (repHouse > 0)
+            {
+                repBonus = (int)(repHouse * 1 * repPenalty);
             }
             else
             {
-                repBonus = (int)(repHouse * repPenalty);
+                repBonus = (int)(repHouse * 1.2 * repPenalty);
             }
+            
             simGame.SetReputation(GenerateContractFactions.GetFactionValueFromString(InfoClass.DeploymentInfo.DeploymentFactionID), repBonus, StatCollection.StatOperation.Int_Add, null);
-            simGame.SetReputation(GenerateContractFactions.GetFactionValueFromString(Main.Settings.AlliedFactions[InfoClass.DeploymentInfo.DeploymentFactionID][0]), repBonus, StatCollection.StatOperation.Int_Add, null);
-            Log.Info($"Employer and Ally {Main.Settings.AlliedFactions[InfoClass.DeploymentInfo.DeploymentFactionID][0]} Reputation change : {repHouse}");
-            if (repPenalty == 1 || penalty == 0)
-                msgText += $"{Environment.NewLine}And finally our employer {InfoClass.DeploymentInfo.DeploymentFactionID} and their closest ally {Main.Settings.AlliedFactions[InfoClass.DeploymentInfo.DeploymentFactionID][0]} has rewarded us {repBonus} reputation for our discretion.{Environment.NewLine}";
+            factionString.Clear();
+            if (Main.Settings.AlliedFactions.ContainsKey(InfoClass.DeploymentInfo.DeploymentFactionID))
+            {
+                foreach (string faction in Main.Settings.AlliedFactions[InfoClass.DeploymentInfo.DeploymentFactionID].ToList())
+                {
+                    FactionValue tmpFactionValue = GenerateContractFactions.GetFactionValueFromString(faction);
+                    if (!tmpFactionValue.IsInvalidUnset)
+                    {
+                        if (tmpFactionValue.DoesGainReputation)
+                        {
+                            simGame.SetReputation(tmpFactionValue, repBonus, StatCollection.StatOperation.Int_Add, null);
+                            factionString.Add(faction);
+                        }
+                        else
+                        {
+                            simGame.SetReputation(GenerateContractFactions.GetFactionValueFromString(InfoClass.DeploymentInfo.DeploymentFactionID), repBonus, StatCollection.StatOperation.Int_Add, null);
+                            factionString.Add($"{faction} (added to {InfoClass.DeploymentInfo.DeploymentFactionID})");
+                        }
+                    }
+                    else
+                    {
+                        Log.Info($"wARNING: AlliedFactions[{InfoClass.DeploymentInfo.DeploymentFactionID}] contains {faction} which does not have a FactionValue");
+                    }
+                }
+            }
+
+            string tmpString;
+            if (factionString.Count() > 0)
+            {
+                factionString[factionString.Count() - 1] = $"and {factionString[factionString.Count() - 1]}";
+                tmpString = $" plus their allies {string.Join(", ", factionString.Select(s => $"{s}"))},";
+            }
             else
-                msgText += $"{Environment.NewLine}And finally our employer {InfoClass.DeploymentInfo.DeploymentFactionID} and their closest ally {Main.Settings.AlliedFactions[InfoClass.DeploymentInfo.DeploymentFactionID][0]} has rewarded us {repBonus} reputation for our discretion which includes a {penalty * 100}% penalty for ending the deployment early.{Environment.NewLine}";
+            {
+                tmpString = $",";
+            }
+
+            Log.Info($"Employer and Ally Reputation change : {repHouse}");
+            if (repPenalty == 1 || penalty == 0)
+                msgText += $"{Environment.NewLine}And finally our employer {InfoClass.DeploymentInfo.DeploymentFactionID}{tmpString} has rewarded us {repBonus} reputation for our discretion.{Environment.NewLine}";
+            else
+                msgText += $"{Environment.NewLine}And finally our employer {InfoClass.DeploymentInfo.DeploymentFactionID}{tmpString} has rewarded us {repBonus} reputation for our discretion which includes a {penalty * 100}% penalty for ending the deployment early.{Environment.NewLine}";
 
             PauseNotification.Show(msgTitle, msgText, simGame.GetCrewPortrait(SimGameCrew.Crew_Darius), "", true);
             Log.Info($"{msgTitle} : {msgText}");
@@ -839,27 +936,27 @@ namespace VXIContractHiringHubs
             switch (DeploymentInfo.MDStats.EthicsSum)
             {
                 case 10:
-                    houseRepPct = 100;
+                    houseRepPct = 200;
                     pirateRepPct = -100;
                     morality = "Righteous";
                     break;
                 case 9:
-                    houseRepPct = 100;
+                    houseRepPct = 180;
                     pirateRepPct = -80;
                     morality = "Pure";
                     break;
                 case 8:
-                    houseRepPct = 100;
+                    houseRepPct = 160;
                     pirateRepPct = -60;
                     morality = "Pure";
                     break;
                 case 7:
-                    houseRepPct = 100;
+                    houseRepPct = 140;
                     pirateRepPct = -40;
                     morality = "Lawful";
                     break;
                 case 6:
-                    houseRepPct = 100;
+                    houseRepPct = 120;
                     pirateRepPct = -20;
                     morality = "Lawful";
                     break;
@@ -889,27 +986,27 @@ namespace VXIContractHiringHubs
                     morality = "Clean";
                     break;
                 case -10:
-                    pirateRepPct = 100;
+                    pirateRepPct = 200;
                     houseRepPct = -100;
                     morality = "Wicked";
                     break;
                 case -9:
-                    pirateRepPct = 100;
+                    pirateRepPct = 180;
                     houseRepPct = -80;
                     morality = "Impure";
                     break;
                 case -8:
-                    pirateRepPct = 100;
+                    pirateRepPct = 160;
                     houseRepPct = -60;
                     morality = "Impure";
                     break;
                 case -7:
-                    pirateRepPct = 100;
+                    pirateRepPct = 140;
                     houseRepPct = -40;
                     morality = "Lawless";
                     break;
                 case -6:
-                    pirateRepPct = 100;
+                    pirateRepPct = 120;
                     houseRepPct = -20;
                     morality = "Lawless";
                     break;

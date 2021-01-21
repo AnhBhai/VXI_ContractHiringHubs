@@ -41,7 +41,7 @@ namespace VXIContractHiringHubs
         
         public static Dictionary<string, List<string>> TextByContractTypeID = new Dictionary<string, List<string>>();
 
-        public static Dictionary<string, List<string>> EmpStartingTextFlavour = new Dictionary<string, List<string>>();
+        //public static Dictionary<string, List<string>> EmpStartingTextFlavour = new Dictionary<string, List<string>>();
         public static Dictionary<string, List<KeyValuePair<string, string>>> EmpTextContractTypeID = new Dictionary<string, List<KeyValuePair<string, string>>>();
         public static Dictionary<string, List<KeyValuePair<string, string>>> DariusText = new Dictionary<string, List<KeyValuePair<string,string>>>();
 
@@ -268,7 +268,6 @@ namespace VXIContractHiringHubs
         }
         public static void GetContractListingDictionary()
         {
-            //string currentDirectory = Directory.GetParent($"{ Core.Settings.modDirectory}").FullName;
             string filePath = Path.Combine(VXIContractHiringHubs.Main.Settings.modDirectory, "ContractBuilding", "ContractList.csv");
 
             var reader = new StreamReader(filePath);
@@ -289,15 +288,6 @@ namespace VXIContractHiringHubs
 
                         if (!ContractListing.ContainsKey(contractID))
                             ContractListing.Add(contractID, contractListDetails);
-                        //List<ContractListDetails> listDetails = new List<ContractListDetails>();
-                        //if (ContractListing.ContainsKey(contractTypeID))
-                        //{
-                        //    ContractListing[contractTypeID].Add(contractListDetails);
-                        //}
-                        //else
-                        //{
-                        //    ContractListing.Add(contractTypeID, listDetails);
-                        //}
                     }
                     else
                     {
@@ -310,15 +300,9 @@ namespace VXIContractHiringHubs
 
         public static void GetTextFlavourDictionary()
         {
-            //string currentDirectory = Directory.GetParent($"{ Core.Settings.modDirectory}").FullName;
             string filePath = Path.Combine(VXIContractHiringHubs.Main.Settings.modDirectory, "ContractBuilding", "TextTypeCategory.csv");
 
             var reader = new StreamReader(filePath);
-
-            //Dictionary<string, List<string>> FlavourTextWho = new Dictionary<string, List<string>>();
-            //Dictionary<string, List<string>> FlavourTextWhat = new Dictionary<string, List<string>>();
-            //Dictionary<string, List<string>> FlavourTextWhy = new Dictionary<string, List<string>>();
-            //Dictionary<string, List<string>> FlavourTextHow = new Dictionary<string, List<string>>();
 
             while (!reader.EndOfStream)
             {
@@ -333,103 +317,6 @@ namespace VXIContractHiringHubs
                     KeyValuePair<string, string> keyValuePair = new KeyValuePair<string, string>(flavourCategory, flavourType);
 
                     FlavourTextByTypeCategory.Add(flavourText, keyValuePair);
-                    //List<string> tmpList = new List<string>();
-                    //tmpList.Add(flavourText);
-
-                    //    if (flavourCategory == "Both" || flavourCategory == "Military")
-                    //    {
-                    //        if (flavourType == "Who" && flavourText != "")
-                    //        {
-                    //            if (FlavourTextWho.ContainsKey("Military"))
-                    //            {
-                    //                FlavourTextWho["Military"].Add(flavourText);
-                    //            }
-                    //            else
-                    //            {
-                    //                FlavourTextWho.Add("Military", tmpList);
-                    //            }
-                    //        }
-                    //        else if(flavourType == "What" && flavourText != "")
-                    //        {
-                    //            if (FlavourTextWhat.ContainsKey("Military"))
-                    //            {
-                    //                FlavourTextWhat["Military"].Add(flavourText);
-                    //            }
-                    //            else
-                    //            {
-                    //                FlavourTextWhat.Add("Military", tmpList);
-                    //            }
-                    //        }
-                    //        else if (flavourType == "Why" && flavourText != "")
-                    //        {
-                    //            if (FlavourTextWhy.ContainsKey("Military"))
-                    //            {
-                    //                FlavourTextWhy["Military"].Add(flavourText);
-                    //            }
-                    //            else
-                    //            {
-                    //                FlavourTextWho.Add("Military", tmpList);
-                    //            }
-                    //        }
-                    //        else if (flavourType == "How" && flavourText != "")
-                    //        {
-                    //            if (FlavourTextHow.ContainsKey("Military"))
-                    //            {
-                    //                FlavourTextHow["Military"].Add(flavourText);
-                    //            }
-                    //            else
-                    //            {
-                    //                FlavourTextHow.Add("Military", tmpList);
-                    //            }
-                    //        }
-                    //    }
-                    //    if (flavourCategory == "Both" || flavourCategory == "Political")
-                    //    {
-                    //        if (flavourType == "Who" && flavourText != "")
-                    //        {
-                    //            if (FlavourTextWho.ContainsKey("Political"))
-                    //            {
-                    //                FlavourTextWho["Political"].Add(flavourText);
-                    //            }
-                    //            else
-                    //            {
-                    //                FlavourTextWho.Add("Political", tmpList);
-                    //            }
-                    //        }
-                    //        else if (flavourType == "What" && flavourText != "")
-                    //        {
-                    //            if (FlavourTextWhat.ContainsKey("Political"))
-                    //            {
-                    //                FlavourTextWhat["Political"].Add(flavourText);
-                    //            }
-                    //            else
-                    //            {
-                    //                FlavourTextWhat.Add("Political", tmpList);
-                    //            }
-                    //        }
-                    //        else if (flavourType == "Why" && flavourText != "")
-                    //        {
-                    //            if (FlavourTextWhy.ContainsKey("Political"))
-                    //            {
-                    //                FlavourTextWhy["Political"].Add(flavourText);
-                    //            }
-                    //            else
-                    //            {
-                    //                FlavourTextWho.Add("Political", tmpList);
-                    //            }
-                    //        }
-                    //        else if (flavourType == "How" && flavourText != "")
-                    //        {
-                    //            if (FlavourTextHow.ContainsKey("Political"))
-                    //            {
-                    //                FlavourTextHow["Political"].Add(flavourText);
-                    //            }
-                    //            else
-                    //            {
-                    //                FlavourTextHow.Add("Political", tmpList);
-                    //            }
-                    //        }
-                    //    }
                 }
 
             }
@@ -491,21 +378,21 @@ namespace VXIContractHiringHubs
                     List<string> tmpList = new List<string>();
                     tmpList.Add(sText);
 
-                    if (sType == "Employer_Start")
-                    {
-                        List<string> tmpList1 = new List<string>();
-                        if (EmpStartingTextFlavour.ContainsKey(sSubType))
-                        {
-                            EmpStartingTextFlavour[sSubType].Add(sText);
-                        }
-                        else
-                        {
-                            tmpList1.Add(sText);
-                            EmpStartingTextFlavour.Add(sSubType, tmpList1);
-                        }
-                    }
-                    else
-                    {
+                    //if (sType == "Employer_Start")
+                    //{
+                    //    List<string> tmpList1 = new List<string>();
+                    //    if (EmpStartingTextFlavour.ContainsKey(sSubType))
+                    //    {
+                    //        EmpStartingTextFlavour[sSubType].Add(sText);
+                    //    }
+                    //    else
+                    //    {
+                    //        tmpList1.Add(sText);
+                    //        EmpStartingTextFlavour.Add(sSubType, tmpList1);
+                    //    }
+                    //}
+                    //else
+                    //{
                         KeyValuePair<string, string> tmpPair2 = new KeyValuePair<string, string>(sSubType, sText);
                         List<KeyValuePair<string, string>> tmpListPair2 = new List<KeyValuePair<string, string>>();
                         if (EmpTextContractTypeID.ContainsKey(sType))
@@ -517,11 +404,7 @@ namespace VXIContractHiringHubs
                             tmpListPair2.Add(tmpPair2);
                             EmpTextContractTypeID.Add(sType, tmpListPair2);
                         }
-                    }
-                    ;
-                    ;
-
-
+                    //}
                 }
             }
         }
