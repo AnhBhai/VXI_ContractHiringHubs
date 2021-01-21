@@ -152,6 +152,15 @@ namespace Helpers
             MDStats.PoliticalCount = 0;
             MDStats.PoliticalSkulls = 0;
 
+            MDStats.Victories = 0;
+            MDStats.VictorySkulls = 0;
+            MDStats.Retreats = 0;
+            MDStats.Defeats = 0;
+            MDStats.MechsDestroyed = 0;
+            MDStats.VeesDestroyed = 0;
+
+            MDStats.ContractTypeCounts.Clear();
+
             MDStats.EthicsSum = 0;
             MDStats.BonusPaid = 0;
 

@@ -160,7 +160,13 @@ namespace VXIContractHiringHubs
                 {
                     if (InfoClass.DeploymentInfo.IsDeployment || InfoClass.MercGuildInfo.IsDeployment)
                     {
-                        if (InfoClass.DeploymentInfo.NoWaveContracts >= Main.Settings.ActiveDeploymentContracts)
+                        int maxPerWave = Main.Settings.ActiveDeploymentContracts;
+                        string factionID = InfoClass.DeploymentInfo.DeploymentFactionID;
+                        if (Main.Settings.DeploymentChoiceMax.ContainsKey(__instance.GetReputation(GenerateContractFactions.GetFactionValueFromString(factionID)).ToString()))
+                        {
+                            maxPerWave = Main.Settings.DeploymentChoiceMax[__instance.GetReputation(GenerateContractFactions.GetFactionValueFromString(factionID)).ToString()][1];
+                        }
+                        if (InfoClass.DeploymentInfo.NoWaveContracts >= maxPerWave)
                         {
                             __instance.CurSystem.ResetContracts();
                             InfoClass.DeploymentInfo.NoWaveContracts = 0;

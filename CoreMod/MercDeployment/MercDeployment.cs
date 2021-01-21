@@ -444,11 +444,21 @@ namespace VXIContractHiringHubs
                         List<string> listExclude = new List<string>();
                         DeploymentInfo.DCInfo.Clear();
                         //string longDesc = $"We'll be behind enemy lines here, we'll get generous salvage on this contract and our employer will cover jump costs and {PercentageExpenses * 100}% of our operating costs during travel. ";
-                        for (int i = 0; totalMissions < (int)(Main.Settings.ActiveDeploymentContracts * 1.9) && i < Main.Settings.ActiveDeploymentContracts * 3; i++)
+                        
+                        int maxContracts = (int)(Main.Settings.ActiveDeploymentContracts * 1.9);
+                        int maxPerWave = Main.Settings.ActiveDeploymentContracts;
+                        string factionID = InfoClass.DeploymentInfo.DeploymentFactionID;
+                        if (Main.Settings.DeploymentChoiceMax.ContainsKey(simGame.GetReputation(GenerateContractFactions.GetFactionValueFromString(factionID)).ToString()))
+                        {
+                            maxPerWave = Main.Settings.DeploymentChoiceMax[simGame.GetReputation(GenerateContractFactions.GetFactionValueFromString(factionID)).ToString()][1]; 
+                            maxContracts = Main.Settings.DeploymentChoiceMax[simGame.GetReputation(GenerateContractFactions.GetFactionValueFromString(factionID)).ToString()][0];
+                            Log.Info($"Company has {simGame.GetReputation(GenerateContractFactions.GetFactionValueFromString(factionID)).ToString()} rep with {factionID}");
+                        }
+
+                        for (int i = 0; totalMissions < maxContracts && i < maxContracts * 2; i++)
                         {
                             Log.Info("");
                             Log.Info("");
-
                             clearFirst = i == 0;
 
                             generateContract.MaxContracts = totalMissions + 1;
@@ -458,28 +468,28 @@ namespace VXIContractHiringHubs
                             generateContract.strictTargetReq = generateContract.strictOwnerReq = false;
 
                             //generateContract.LongDescriptionStart = longDesc;
-                            //generateContract.ContractEmployer = DeploymentInfo.DeploymentFactionID;
+                            //generateContract.ContractEmployer = factionID;
                             if (!listContractID.Where(x => !listExclude.Contains(x.ID.Substring(0, x.ID.IndexOf('_')))).Any())
                                 listExclude.Clear();
 
-                            if (simGame.NetworkRandom.Int(0, 100 + 1) <= Main.Settings.DeploymentAllyPct && Main.Settings.EnemyFactions.ContainsKey(simGame.CurSystem.OwnerValue.Name) && Main.Settings.EnemyFactions.ContainsKey(DeploymentInfo.DeploymentFactionID))
+                            if (simGame.NetworkRandom.Int(0, 100 + 1) <= Main.Settings.DeploymentAllyPct && Main.Settings.EnemyFactions.ContainsKey(simGame.CurSystem.OwnerValue.Name) && Main.Settings.EnemyFactions.ContainsKey(factionID))
                             {
-                                generateContract.ContractEmployer = Main.Settings.EnemyFactions[simGame.CurSystem.OwnerValue.Name].Where(x => !Main.Settings.EnemyFactions[DeploymentInfo.DeploymentFactionID].Contains(x) || x.Equals("Locals")).ToList().GetRandomElement();
+                                generateContract.ContractEmployer = Main.Settings.EnemyFactions[simGame.CurSystem.OwnerValue.Name].Where(x => !Main.Settings.EnemyFactions[factionID].Contains(x) || x.Equals("Locals")).ToList().GetRandomElement();
                                 generateContract.ShortDescriptionStart = $"[DEPLOYMENT PARTNER] :: ";
                             }
 
                             if (generateContract.ContractEmployer.Equals("") || generateContract.ContractEmployer == null)
                             {
-                                generateContract.ContractEmployer = DeploymentInfo.DeploymentFactionID;
+                                generateContract.ContractEmployer = factionID;
                                 generateContract.ShortDescriptionStart = $"[STANDARD DEPLOYMENT :: ";
                             }
 
                             GenerateContractFactions.setContractFactionsBasedOnRandom(generateContract, simGame, simGame.CurSystem);
 
-                            if (simGame.NetworkRandom.Int(0, 100 + 1) <= Main.Settings.DeploymentAllyPct + (DeploymentInfo.Wave * 3 - 12) && Main.Settings.AlliedFactions.ContainsKey(generateContract.ContractTarget) && Main.Settings.AlliedFactions.ContainsKey(DeploymentInfo.DeploymentFactionID) && DeploymentInfo.Wave > 2)
+                            if (simGame.NetworkRandom.Int(0, 100 + 1) <= Main.Settings.DeploymentAllyPct + (DeploymentInfo.Wave * 3 - 12) && Main.Settings.AlliedFactions.ContainsKey(generateContract.ContractTarget) && Main.Settings.AlliedFactions.ContainsKey(factionID) && DeploymentInfo.Wave > 2)
                             {
                                 generateContract.ContractTgtAlly = generateContract.ContractTarget;
-                                generateContract.ContractTarget = Main.Settings.AlliedFactions[generateContract.ContractTarget].Where(x => !Main.Settings.AlliedFactions[DeploymentInfo.DeploymentFactionID].Contains(x) && !x.Equals(DeploymentInfo.DeploymentFactionID)).GetRandomElement();
+                                generateContract.ContractTarget = Main.Settings.AlliedFactions[generateContract.ContractTarget].Where(x => !Main.Settings.AlliedFactions[factionID].Contains(x) && !x.Equals(factionID)).GetRandomElement();
                                 generateContract.ShortDescriptionStart += $"OFFWORLD ENEMY]{Environment.NewLine}";
                             }
                             else
@@ -558,15 +568,16 @@ namespace VXIContractHiringHubs
                         {
                             DeploymentInfo.DateLastRefresh = currentDate;
                             DeploymentInfo.Wave++;
+                            DeploymentInfo.NoWaveContracts = 0;
 
                             simGame.StopPlayMode();
                             if (DeploymentInfo.Wave == 1)
                             {
-                                PauseNotification.Show($"START {Main.Settings.LengthDeploymentDays}DAY DEPLOYMENT", $"Well thats that Commander, I just finished signing us on to complete this {Main.Settings.LengthDeploymentDays}day Deployment for {DeploymentInfo.DeploymentFactionID}.{Environment.NewLine}"
+                                PauseNotification.Show($"START {Main.Settings.LengthDeploymentDays}DAY DEPLOYMENT", $"Well thats that Commander, I just finished signing us on to complete this {Main.Settings.LengthDeploymentDays}day Deployment for {factionID}.{Environment.NewLine}"
                                                                                                                     + $"Just like a Travel Contract there are some of the usual penalites for breaking a contract.{Environment.NewLine}"
                                                                                                                     + $" If we break the deployment:{Environment.NewLine}"
                                                                                                                     + $" + We will lose partial bonus payments and have to refund any costs that we have covered.{Environment.NewLine}"
-                                                                                                                    + $" + More importantly, our reputation with {DeploymentInfo.DeploymentFactionID} and the {FactionEnumeration.GetMercenaryReviewBoardFactionValue().FriendlyName} will be damaged.{Environment.NewLine}"
+                                                                                                                    + $" + More importantly, our reputation with {factionID} and the {FactionEnumeration.GetMercenaryReviewBoardFactionValue().FriendlyName} will be damaged.{Environment.NewLine}"
                                                                                                                     + $" Although they may not be so harsh if we perform most of the deployment.{Environment.NewLine}"
                                                                                                                     + $"{Environment.NewLine}"
                                                                                                                     + $"Further note, we'll get a new set of contracts as we go and we get to select as many or as little as we like. Also, we'll receive contracts from other interested parties but only those endorsed by our employer.{Environment.NewLine}"
@@ -577,13 +588,13 @@ namespace VXIContractHiringHubs
                             {
                                 PauseNotification.Show($"WAVE {InfoClass.DeploymentInfo.Wave}", $"{simGame.Commander.FirstName}, this morning our employer sent us through the plans for Wave number {InfoClass.DeploymentInfo.Wave}."
                                                                                                 + $"  There are {simGame.CurSystem.SystemContracts.Count()} new contracts to choose from."
-                                                                                                + $"  We can choose to do anywhere from 0 to {Main.Settings.ActiveDeploymentContracts} contracts, this wave."
+                                                                                                + $"  We can choose to do anywhere from 0 to {maxPerWave} contracts, this wave."
                                                                                                 + $"  Any contracts we cannot get done, our employer will take care of."
                                                                                                 + $"  So I'll be in the command centre to debrief, when you are ready and we can launch the ones that best suit our unit.{Environment.NewLine}" +
                                                                                                 $"{Environment.NewLine}" +
                                                                                                 $"T-Minus {DeploymentInfo.DateDeploymentEnd.Subtract(currentDate).Days + 1} days until the end of our deployment.", simGame.GetCrewPortrait(SimGameCrew.Crew_Darius), "", true);
                             }
-                            else if (InfoClass.DeploymentInfo.Wave > 3)
+                            else if (InfoClass.DeploymentInfo.Wave >= 3)
                             {
                                 if (currentDate.AddDays(Main.Settings.DeploymentContractRefresh) < DeploymentInfo.DateDeploymentEnd)
                                     PauseNotification.Show($"WAVE #{InfoClass.DeploymentInfo.Wave}", $"Wave number {InfoClass.DeploymentInfo.Wave} is ready, {simGame.Commander.Callsign}."
@@ -767,15 +778,15 @@ namespace VXIContractHiringHubs
 
             if (repHouse < 0 && factionString.Count() > 0)
             {
-                repBonus = (int)(repHouse * 1.2 * repPenalty * moralityReward.Value / 100);
+                repBonus = (int)(repBonus * 1.2 * repPenalty * moralityReward.Value / 100 + .5);
             }
             else if (repHouse > 0)
             {
-                repBonus = (int)(repHouse * 1 * repPenalty);
+                repBonus = (int)(repBonus * 1 * repPenalty +.5);
             }
             else
             {
-                repBonus = (int)(repHouse * 1.2 * repPenalty);
+                repBonus = (int)(repBonus * 1.2 * repPenalty + .5);
             }
             
             simGame.SetReputation(GenerateContractFactions.GetFactionValueFromString(InfoClass.DeploymentInfo.DeploymentFactionID), repBonus, StatCollection.StatOperation.Int_Add, null);
