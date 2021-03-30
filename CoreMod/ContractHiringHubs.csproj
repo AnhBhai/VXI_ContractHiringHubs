@@ -9,7 +9,7 @@
     <AppDesignerFolder>Properties</AppDesignerFolder>
     <RootNamespace>VXIContractHiringHubs</RootNamespace>
     <AssemblyName>VXIContractHiringHubs</AssemblyName>
-    <TargetFrameworkVersion>v4.0</TargetFrameworkVersion>
+    <TargetFrameworkVersion>v4.7.2</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <Deterministic>true</Deterministic>
     <TargetFrameworkProfile />
@@ -22,6 +22,7 @@
     <DefineConstants>DEBUG;TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
+    <Prefer32Bit>false</Prefer32Bit>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <DebugType>pdbonly</DebugType>
@@ -30,14 +31,17 @@
     <DefineConstants>TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
+    <Prefer32Bit>false</Prefer32Bit>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="0Harmony">
-      <HintPath>..\..\..\..\..\Program Files (x86)\Steam\steamapps\common\BATTLETECH\BattleTech_Data\Managed\0Harmony.dll</HintPath>
+    <Reference Include="0Harmony, Version=1.2.0.1, Culture=neutral, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\..\..\..\Program Files (x86)\Steam\steamapps\common\BATTLETECH\BattleTech_Data\Managed\0Harmony.dll</HintPath>
     </Reference>
     <Reference Include="Assembly-CSharp">
       <HintPath>..\..\..\..\..\Program Files (x86)\Steam\steamapps\common\BATTLETECH\BattleTech_Data\Managed\Assembly-CSharp.dll</HintPath>
     </Reference>
+    <Reference Include="Microsoft.CSharp" />
     <Reference Include="Newtonsoft.Json, Version=12.0.0.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed, processorArchitecture=MSIL">
       <HintPath>..\packages\Newtonsoft.Json.12.0.3\lib\net40\Newtonsoft.Json.dll</HintPath>
     </Reference>
@@ -69,18 +73,21 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="ExternalDLL\XOTL_ModSettings.cs" />
     <Compile Include="Helpers\GlobalMethods.cs" />
-    <Compile Include="MercDeployment\MercGuildDictionary.cs" />
+    <Compile Include="MercDeployment\MercDeployDictionary.cs" />
     <Compile Include="Helpers\GameObjectExtensions.cs" />
     <Compile Include="Helpers\Log.cs" />
     <Compile Include="Main.cs" />
     <Compile Include="MercDeployment\MercDeployment.cs" />
+    <Compile Include="MercGuild\MercGuildDictionary.cs" />
     <Compile Include="ModSettings.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="MercPilots\MercPilots.cs" />
     <Compile Include="Helpers\SaveHelper.cs" />
     <Compile Include="ContractHiringHubs.cs" />
     <Compile Include="MercGuild\MercGuild.cs" />
+    <Compile Include="Special\MercSpecial.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\ContractManagement\ContractManagement.csproj">

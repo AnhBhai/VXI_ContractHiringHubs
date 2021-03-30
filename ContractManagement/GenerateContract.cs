@@ -49,6 +49,14 @@ namespace VXIContractManagement
         public string TargetOverride { get; set; }
         public string EmployerOverride { get; set; }
 
+        // Lance Overrides
+        public Dictionary<int, Dictionary<int, string>> PlayerTeamOverride { get; set; }
+        public Dictionary<int, Dictionary<int, string>> TargetTeamOverride { get; set; }
+        public Dictionary<int, Dictionary<int, string>> TgtAllyTeamOverride { get; set; }
+        public Dictionary<int, Dictionary<int, string>> EmployerTeamOverride { get; set; }
+        public Dictionary<int, Dictionary<int, string>> EmpAllyTeamOverride { get; set; }
+        public Dictionary<int, Dictionary<int, string>> HostileTeamOverride { get; set; }
+
         // Contract Creation Settings
         public int MinDifficulty { get; set; }
         public int MaxDifficulty { get; set; }
@@ -96,6 +104,13 @@ namespace VXIContractManagement
             strictOwnerReq = false;
             strictNeutralReq = false;
             strictHostileReq = false;
+
+            PlayerTeamOverride = new Dictionary<int, Dictionary<int, string>> ();
+            TargetTeamOverride = new Dictionary<int, Dictionary<int, string>> ();
+            TgtAllyTeamOverride = new Dictionary<int, Dictionary<int, string>> ();
+            EmployerTeamOverride = new Dictionary<int, Dictionary<int, string>> ();
+            EmpAllyTeamOverride = new Dictionary<int, Dictionary<int, string>> ();
+            HostileTeamOverride = new Dictionary<int, Dictionary<int, string>>();
         }
 
         //public GenerateContract(SimGameState.AddContractData addContractData)
@@ -156,17 +171,17 @@ namespace VXIContractManagement
 
         private static Dictionary<int, List<ContractOverride>> GetSinglePlayerProceduralContractOverrides(ContractDifficultyRange diffRange, SimGameState simGame)
         {
-            Func<string, ContractOverride> blah5;
-            Func<ContractOverride, bool> blah6;
+            Func<string, ContractOverride> func1;
+            Func<ContractOverride, bool> func2;
             return (from c in MetadataDatabase.Instance.GetContractsByDifficultyRangeAndScopeAndOwnership((int)diffRange.MinDifficultyClamped, (int)diffRange.MaxDifficultyClamped, simGame.ContractScope, true)
                     where c.ContractTypeRow.IsSinglePlayerProcedural
                     group c.ContractID by (int)c.ContractTypeRow.ContractTypeID).ToDictionary((IGrouping<int, string> c) => c.Key, delegate (IGrouping<int, string> c)
                     {
                         Func<string, ContractOverride> selector;
-                        selector = (blah5 = ((string ci) => simGame.DataManager.ContractOverrides.Get(ci)));
+                        selector = (func1 = ((string ci) => simGame.DataManager.ContractOverrides.Get(ci)));
                         IEnumerable<ContractOverride> source = c.Select(selector);
                         Func<ContractOverride, bool> predicate;
-                        predicate = (blah6 = ((ContractOverride ci) => IsWithinDifficultyRange(diffRange, GetDifficultyEnumFromValue(ci.difficulty))));
+                        predicate = (func2 = ((ContractOverride ci) => IsWithinDifficultyRange(diffRange, GetDifficultyEnumFromValue(ci.difficulty))));
                         return source.Where(predicate).ToList<ContractOverride>();
                     });
         }
@@ -260,6 +275,101 @@ namespace VXIContractManagement
             return true;
         }
 
+        public ContractOverride SetCustomTeamOverrides(ContractOverride ovr)
+        {
+            if (this.PlayerTeamOverride.Count() > 0 && ovr.player1Team.lanceOverrideList.Count() > 0)
+            {
+                for (int i = 0; i < this.PlayerTeamOverride.Count(); i++)
+                {
+                    if (this.PlayerTeamOverride.ContainsKey(i) && ovr.player1Team.lanceOverrideList.Count() > i)
+                    {
+                        foreach (KeyValuePair<int, string> keyValuePair in this.PlayerTeamOverride[i])
+                        {
+                            if (ovr.player1Team.lanceOverrideList[i].unitSpawnPointOverrideList.Count() > keyValuePair.Key)
+                                ovr.player1Team.lanceOverrideList[i].unitSpawnPointOverrideList[keyValuePair.Key].pilotDefId = keyValuePair.Value;
+                        }
+                    }
+                }
+            }
+
+            if (this.TargetTeamOverride.Count() > 0 && ovr.targetTeam.lanceOverrideList.Count() > 0)
+            {
+                for (int i = 0; i < this.TargetTeamOverride.Count(); i++)
+                {
+                    if (this.TargetTeamOverride.ContainsKey(i) && ovr.targetTeam.lanceOverrideList.Count() > i)
+                    {
+                        foreach (KeyValuePair<int, string> keyValuePair in this.TargetTeamOverride[i])
+                        {
+                            if (ovr.targetTeam.lanceOverrideList[i].unitSpawnPointOverrideList.Count() > keyValuePair.Key)
+                                ovr.targetTeam.lanceOverrideList[i].unitSpawnPointOverrideList[keyValuePair.Key].pilotDefId = keyValuePair.Value;
+                        }
+                    }
+                }
+            }
+
+            if (this.TgtAllyTeamOverride.Count() > 0 && ovr.targetsAllyTeam.lanceOverrideList.Count() > 0)
+            {
+                for (int i = 0; i < this.TgtAllyTeamOverride.Count(); i++)
+                {
+                    if (this.TgtAllyTeamOverride.ContainsKey(i) && ovr.targetsAllyTeam.lanceOverrideList.Count() > i)
+                    {
+                        foreach (KeyValuePair<int, string> keyValuePair in this.TgtAllyTeamOverride[i])
+                        {
+                            if (ovr.targetsAllyTeam.lanceOverrideList[i].unitSpawnPointOverrideList.Count() > keyValuePair.Key)
+                                ovr.targetsAllyTeam.lanceOverrideList[i].unitSpawnPointOverrideList[keyValuePair.Key].pilotDefId = keyValuePair.Value;
+                        }
+                    }
+                }
+            }
+
+            if (this.EmployerTeamOverride.Count() > 0 && ovr.employerTeam.lanceOverrideList.Count() > 0)
+            {
+                for (int i = 0; i < this.EmployerTeamOverride.Count(); i++)
+                {
+                    if (this.EmployerTeamOverride.ContainsKey(i) && ovr.employerTeam.lanceOverrideList.Count() > i)
+                    {
+                        foreach (KeyValuePair<int, string> keyValuePair in this.EmployerTeamOverride[i])
+                        {
+                            if (ovr.employerTeam.lanceOverrideList[i].unitSpawnPointOverrideList.Count() > keyValuePair.Key)
+                                ovr.employerTeam.lanceOverrideList[i].unitSpawnPointOverrideList[keyValuePair.Key].pilotDefId = keyValuePair.Value;
+                        }
+                    }
+                }
+            }
+
+            if (this.EmpAllyTeamOverride.Count() > 0 && ovr.employersAllyTeam.lanceOverrideList.Count() > 0)
+            {
+                for (int i = 0; i < this.EmpAllyTeamOverride.Count(); i++)
+                {
+                    if (this.EmpAllyTeamOverride.ContainsKey(i) && ovr.employersAllyTeam.lanceOverrideList.Count() > i)
+                    {
+                        foreach (KeyValuePair<int, string> keyValuePair in this.EmpAllyTeamOverride[i])
+                        {
+                            if (ovr.employersAllyTeam.lanceOverrideList[i].unitSpawnPointOverrideList.Count() > keyValuePair.Key)
+                                ovr.employersAllyTeam.lanceOverrideList[i].unitSpawnPointOverrideList[keyValuePair.Key].pilotDefId = keyValuePair.Value;
+                        }
+                    }
+                }
+            }
+
+            if (this.HostileTeamOverride.Count() > 0 && ovr.hostileToAllTeam.lanceOverrideList.Count() > 0)
+            {
+                for (int i = 0; i < this.HostileTeamOverride.Count(); i++)
+                {
+                    if (this.HostileTeamOverride.ContainsKey(i) && ovr.hostileToAllTeam.lanceOverrideList.Count() > i)
+                    {
+                        foreach (KeyValuePair<int, string> keyValuePair in this.EmpAllyTeamOverride[i])
+                        {
+                            if (ovr.hostileToAllTeam.lanceOverrideList[i].unitSpawnPointOverrideList.Count() > keyValuePair.Key)
+                                ovr.hostileToAllTeam.lanceOverrideList[i].unitSpawnPointOverrideList[keyValuePair.Key].pilotDefId = keyValuePair.Value;
+                        }
+                    }
+                }
+            }
+
+            return ovr;
+        }
+
         public ContractOverride BuildOverride(ContractOverride ovr, int travelSeed)
         {
             ContractOverride contractOverride = new ContractOverride();
@@ -350,7 +460,9 @@ namespace VXIContractManagement
                 dblBuffSalvage = (1 + Math.Sqrt(1 + (8 * contractOverride.salvagePotential))) / 2; // goes from +2 for 1,2 up to +8 for 29,...,36
             else
                 dblBuffSalvage = 0.0;
-            
+
+            contractOverride = SetCustomTeamOverrides(contractOverride);
+
             //contractOverride.difficultyUIModifier = ovr.difficultyUIModifier;
             int baseDiff = starSystem.Def.GetDifficulty(simGame.SimGameMode) + Mathf.FloorToInt(simGame.GlobalDifficulty);
             int min = this.MinDifficulty;
@@ -375,6 +487,8 @@ namespace VXIContractManagement
 
             factionValueTgtAlly = (factionValueTgtAlly.IsInvalidUnset ? factionValueTarget : factionValueTgtAlly);
             factionValueEmpAlly = (factionValueEmpAlly.IsInvalidUnset ? factionValueEmployer : factionValueEmpAlly);
+
+            // Set Custom Lances
 
 
             //contract.Override.contract = contract;
@@ -581,6 +695,24 @@ namespace VXIContractManagement
             return potentialContracts;
         }
 
+        public int BuildProceduralContracts(SimGameState simGame, StarSystem targetSystem, bool clearExistingContracts, List<string> contractNames, bool canNegotiate = true, bool isGlobal = false)
+        {
+            ContractOverride ovr = new ContractOverride();
+
+            Dictionary<int, List<ContractOverride>> listContractOvr = ListProceduralContracts(simGame);
+            List<ContractOverride> listContractID = new List<ContractOverride>();
+
+            List<ContractOverride> tmpLCOID = listContractOvr.SelectMany(x => x.Value).ToList<ContractOverride>();
+            listContractID = tmpLCOID.FindAll(x => contractNames.Contains(x.ID));
+
+            if (listContractID.Count > 0)
+            {
+                ovr = listContractID.GetRandomElement();
+                return BuildProceduralContracts(simGame, targetSystem, clearExistingContracts, ovr);
+            }
+
+            return 0;
+        }
         public int BuildProceduralContracts(SimGameState simGame, StarSystem targetSystem, bool clearExistingContracts, ContractOverride ovr, bool canNegotiate = true, bool isGlobal = false)
         {
             int debugCount = 0;

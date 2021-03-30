@@ -17,7 +17,7 @@ using UnityEngine.Events;
 using VXIContractManagement;
 using Helpers;
 using static Helpers.GlobalMethods;
-using static VXIContractHiringHubs.MercGuildDictionary;
+using static VXIContractHiringHubs.MercDeployDictionary;
 using static Helpers.InfoClass;
 
 
@@ -25,7 +25,7 @@ namespace VXIContractHiringHubs
 {
     public static class MercDeployment
     {
-        public static string EndGame = MercGuildDictionary.EmpTextContractTypeID["EndGame"][0].Key;
+        public static string EndGame = EmpTextContractTypeID["EndGame"][0].Key;
 
         public static string AdjustEthics(SimGameState simGame, string sEthics)
         {
@@ -150,14 +150,15 @@ namespace VXIContractHiringHubs
                 }
                 else if (DariusText.ContainsKey(sWhy))
                 {
-                    List<KeyValuePair<string, string>> listProfessionText = DariusText[sWhy];
-                    foreach (KeyValuePair<string, string> text in listProfessionText)
+                    List<KeyValuePair<string, string>> listTrainingText = DariusText[sWhy];
+                    foreach (KeyValuePair<string, string> text in listTrainingText)
                     {
                         if (text.Key == ovr.ID)
                             generateContract.DariusLongDescription = text.Value;
                     }
                     if (generateContract.DariusLongDescription == "")
                         generateContract.DariusLongDescription = "Maybe I should offer to train them in the art of delivery. Its a training mission anyway{Comma} so you decide: Go{Comma} no go?";
+                    ProgressiveTrainingMissions(simGame, generateContract, sWho);
                 }
             }
 
@@ -192,9 +193,14 @@ namespace VXIContractHiringHubs
 
         public static void RetrieveContractToUpdate(SimGameState simGame, string contractID, MissionResult missionResult)
         {
-            
             if (missionResult == MissionResult.Victory)
             {
+                if (DeploymentInfo.CompletedEndGame)
+                {
+                    if (EmpTextContractTypeID["EndGame"][0].Key == contractID)
+                        DeploymentInfo.CompletedEndGame = true;
+                }
+
                 InfoClass.DeploymentInfo.MDStats.Victories++;
                 if (DeploymentInfo.DCInfo.ContainsKey(contractID))
                 {
@@ -225,6 +231,105 @@ namespace VXIContractHiringHubs
             Log.Info($"Mission {InfoClass.DeploymentInfo.NoWaveContracts} of Wave {InfoClass.DeploymentInfo.Wave}");
         }
 
+        public static void ProgressiveTrainingMissions(SimGameState simGame, GenerateContract generateContract, string sWho)
+        {
+            string[] pilots = sWho.Split(':');
+            List<int> trainees = new List<int> { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12 };
+            Dictionary<int, string> dictionary = new Dictionary<int, string>();
+            int missions;
+            int level = 1;
+            int pilotNo = 0;
+            bool isRandom = false;
+            foreach (string pilot in pilots)
+            {
+                if (int.TryParse(pilot, out int i) && i != 0)
+                {
+                    if (DeploymentInfo.MDStats.PilotTraining.ContainsKey("pilot_recruit_R" + i))
+                    {
+                        missions = DeploymentInfo.MDStats.PilotTraining["pilot_recruit_R" + i];
+                        if (Main.Settings.ProgressiveTrainees.Keys.Max() > missions)
+                        {
+                            level = Main.Settings.ProgressiveTrainees[missions];
+                        }
+                        else
+                        {
+                            level = Main.Settings.ProgressiveTrainees[Main.Settings.ProgressiveTrainees.Keys.Max()];
+                        }
+                        dictionary.Add(pilotNo, "pilot_recruit_R" + i.ToString() + "_" + level.ToString("00"));
+                        
+                    }
+                    else
+                    {
+                        Log.Info($"[WARNING] Could not find Trainee No. {i} in MDStats, using default pilot from contract for Slot No. {pilotNo+1}.");
+                        //dictionary.Add(pilotNo, "pilot_recruit_R" + i + "_" + level);
+                    }
+                    pilotNo++;
+                }
+                else
+                {
+                    var myList = DeploymentInfo.MDStats.PilotTraining.ToList();
+
+                    myList.Sort((pair1, pair2) => pair1.Value.CompareTo(pair2.Value));
+
+                    string sPilot = myList[pilotNo].Key;
+                    if (DeploymentInfo.MDStats.PilotTraining.ContainsKey(sPilot))
+                    {
+                        missions = DeploymentInfo.MDStats.PilotTraining[sPilot];
+                        if (Main.Settings.ProgressiveTrainees.Keys.Max() > missions)
+                        {
+                            level = Main.Settings.ProgressiveTrainees[missions];
+                        }
+                        else
+                        {
+                            level = Main.Settings.ProgressiveTrainees[Main.Settings.ProgressiveTrainees.Keys.Max()];
+                        }
+                        dictionary.Add(pilotNo, "pilot_recruit_R" + i.ToString() + "_" + level);
+                        
+                        trainees.Remove(i);
+                    }
+                    else
+                    {
+                        Log.Info($"[WARNING] Could not find {sPilot} in MDStats, using default pilot from contract for Slot No. {"pilot_recruit_R" + (pilotNo + 1)}.");
+                        //dictionary.Add(pilotNo, "pilot_recruit_R" + (pilotNo + 1).ToString() + "_" + level);
+                    }
+                    isRandom = true;
+                    pilotNo++;
+                }   
+            }
+
+            if (dictionary.Count > 0)
+            {
+                if (!isRandom)
+                {
+                    generateContract.PlayerTeamOverride.Add(0, dictionary);
+                }
+                else
+                {
+                    switch (pilots[0])
+                    {
+                        case "RE":
+                            generateContract.EmployerTeamOverride.Add(0, dictionary);
+                            break;
+                        case "REA":
+                            generateContract.EmpAllyTeamOverride.Add(0, dictionary);
+                            break;
+                        case "RT":
+                            generateContract.TargetTeamOverride.Add(0, dictionary);
+                            break;
+                        case "RTA":
+                            generateContract.TgtAllyTeamOverride.Add(0, dictionary);
+                            break;
+                        case "RH":
+                            generateContract.HostileTeamOverride.Add(0, dictionary);
+                            break;
+                        default:
+                            break;
+                    }
+                    
+                }
+            }
+        }
+
         public static void UpdateMDStats(SimGameState simGame, string contractTypeID, string sCategory, string sWho, string sWhy, string sEthics, int difficulty)
         {
             if (sCategory == "Special")
@@ -235,16 +340,40 @@ namespace VXIContractHiringHubs
                 }
                 else if (sWhy == "Training")
                 {
+                    int pilotNo = 0;
+
                     DeploymentInfo.MDStats.TrainingCount += 1;
                     DeploymentInfo.MDStats.TrainingSkulls += difficulty / 2;
+                    
                     string[] pilots = sWho.Split(':');
                     foreach (string pilot in pilots)
                     {
                         if (int.TryParse(pilot, out int i))
-                            DeploymentInfo.MDStats.PilotTraining[i] += 1;
+                        {
+                            if (DeploymentInfo.MDStats.PilotTraining.ContainsKey("pilot_recruit_R" + i))
+                            {
+                                DeploymentInfo.MDStats.PilotTraining["pilot_recruit_R" + i] += 1;
+                            }
+                            else
+                            {
+                                Log.Info($"[WARNING] Could not find Trainee No. {i} in MDStats, cannot add stats for Slot No. {pilotNo + 1}.");
+                                //dictionary.Add(pilotNo, "pilot_recruit_R" + i + "_" + level);
+                            }
+                            
+                        }
                         else
-                            DeploymentInfo.MDStats.PilotTraining[simGame.NetworkRandom.Int(1, 5 + 1)] += 1;
+                        {
+                            var myList = DeploymentInfo.MDStats.PilotTraining.ToList();
+
+                            myList.Sort((pair1, pair2) => pair1.Value.CompareTo(pair2.Value));
+
+                            string sPilot = myList[pilotNo].Key;
+
+                            DeploymentInfo.MDStats.PilotTraining[sPilot] += 1;
+                            pilotNo++;
+                        }
                     }
+                    
                 }
             }
             else if (sCategory == "Military")
@@ -362,6 +491,21 @@ namespace VXIContractHiringHubs
             return ListContractID;
         }
 
+        public static ContractOverride GenerateTrainingMission(List<ContractOverride> ovr)
+        {
+            List<string> contractIDList = new List<string>();
+            ContractOverride contractOverride = new ContractOverride();
+            foreach (KeyValuePair<string, ContractListDetails> keyValuePair in ContractListing)
+            {
+                ContractListDetails contractListDetails = keyValuePair.Value;
+                if (contractListDetails.Why == "Training" && contractListDetails.Category_Type.Key.Contains("Special"))
+                    contractIDList.Add(keyValuePair.Key);
+            }
+
+            contractOverride = ovr.FindAll(x => contractIDList.Contains(x.ID)).GetRandomElement();
+            return contractOverride;
+        }
+
         public static int MercGuildDeployment(GenerateContract generateContract, SimGameState simGame, FactionValue targetFaction, StarSystem targetSystem, int deploymentMissions)
         {
             string tmpDeployFaction = "";
@@ -404,6 +548,7 @@ namespace VXIContractHiringHubs
 
             return 0;
         }
+
         public static void UpdateDeployment(SimGameState simGame)
         {
             try
@@ -455,7 +600,7 @@ namespace VXIContractHiringHubs
                             Log.Info($"Company has {simGame.GetReputation(GenerateContractFactions.GetFactionValueFromString(factionID)).ToString()} rep with {factionID}");
                         }
 
-                        for (int i = 0; totalMissions < maxContracts && i < maxContracts * 2; i++)
+                        for (int i = 0; totalMissions < maxContracts + 1 && i < maxContracts * 2; i++)
                         {
                             Log.Info("");
                             Log.Info("");
@@ -527,15 +672,14 @@ namespace VXIContractHiringHubs
                                 generateContract.ShortDescriptionStart += $"CLASSIFIED MEDIUM-LOW]{ Environment.NewLine}{Environment.NewLine}";
                             }
 
-                            
-
-                            if ((DeploymentInfo.MDStats.ProfessionalCount < 3 && !DeploymentInfo.MDStats.ProfessionalFail) || !listContractID.Exists(x => x.ID.Equals(EndGame)))
+                            if (totalMissions >= maxContracts)
                             {
-                                //if (!listContractID.Exists(x => x.ID == endGame))
-                                //    listExclude.Add(endGame);
+                                Log.Info($"Attempt to Launch extra training mission : {totalMissions} ({maxContracts})");
+                                ovr = GenerateTrainingMission(listContractID);
+                            }
+                            else if ((DeploymentInfo.MDStats.ProfessionalCount < 3 && !DeploymentInfo.MDStats.ProfessionalFail) || !DeploymentInfo.CompletedEndGame)
+                            {
                                 ovr = listContractID.Where(x => !listExclude.Contains(x.ID.Substring(0, x.ID.IndexOf('_'))) && !x.ID.Equals(EndGame)).GetRandomElement();
-                                //if (!listContractID.Exists(x => x.ID == endGame))
-                                //    listExclude.Remove(MercGuildDictionary.EmpTextContractTypeID["EndGame"][0].Key);
                             }
                             else
                             {
@@ -677,6 +821,99 @@ namespace VXIContractHiringHubs
             ContractHiringHubs.UpdateTheHubs(simGame);
         }
 
+        public static void TraineeReward(SimGameState simGame, int daysRemaining)
+        {
+            //var myList = DeploymentInfo.MDStats.PilotTraining.ToList();
+
+            //myList.Sort((pair1, pair2) => Main.Settings.ProgressiveTrainees[Math.Min(10, pair1.Value)].CompareTo(Main.Settings.ProgressiveTrainees[Math.Min(10, pair2.Value)]));
+            int max = 0;
+            int level = 0;
+            List<KeyValuePair<string, int>> rewardTrainee = new List<KeyValuePair<string, int>>();
+
+            List<string> rosteredTraineesID = simGame.PilotRoster.Where(x => x.pilotDef.PilotTags.Contains("pilot_recruit")).ToList().ConvertAll<string>(x => x.Description.Id);
+            List<KeyValuePair<string, int>> rosterTraineeNo = new List<KeyValuePair<string, int>>();
+
+            if (rosteredTraineesID.Count > 0)
+            {
+                foreach (string traineeID in rosteredTraineesID)
+                {
+                    if (traineeID.StartsWith("pilot_recruit_R"))
+                    {
+                        string a = traineeID.Substring(0, traineeID.Length - 3);
+                        if (Int32.TryParse(traineeID.Substring(traineeID.IndexOf("_0") + 2, traineeID.Length), out int b))
+                            rosterTraineeNo.Add(new KeyValuePair<string, int>(a, b));
+                    }
+                }
+            }
+
+            foreach (KeyValuePair<string, int> pilots in DeploymentInfo.MDStats.PilotTraining)
+            {
+                if (Main.Settings.ProgressiveTrainees.Keys.Max() > pilots.Value)
+                    level = Main.Settings.ProgressiveTrainees[pilots.Value];
+                else
+                    level = Main.Settings.ProgressiveTrainees[Main.Settings.ProgressiveTrainees.Keys.Max()];
+
+                if (rosterTraineeNo.Count == 0 || !rosterTraineeNo.Contains(new KeyValuePair<string, int>(pilots.Key, level)))
+                {
+                    if (level > max)
+                    {
+                        max = level;
+                        rewardTrainee.Clear();
+
+                        rewardTrainee.Add(new KeyValuePair<string, int>(pilots.Key, level));
+                    }
+                    else if (level == max)
+                    {
+                        rewardTrainee.Add(new KeyValuePair<string, int>(pilots.Key, level));
+                    }
+                }
+            }
+            
+            if (rewardTrainee.Count() > 0)
+            {
+                KeyValuePair<string, int> pilotNo = rewardTrainee.GetRandomElement();
+                //Pilot pilot = simGame.GetPilot(pilotNo.Key + "_" + pilotNo.Value.ToString("00"));
+                PilotDef pilot = simGame.RoninPilots.Find(x => x.Description.Id == pilotNo.Key + "_" + pilotNo.Value.ToString("00"));
+                string factionName = InfoClass.DeploymentInfo.DeploymentFactionID;
+                string describer = "";
+                for (int j = 0; j < factionName.Length; j++)
+                {
+                    if (j == 0 || !Char.IsUpper(factionName[j]))
+                        describer += factionName[j];
+                    else
+                        break;
+                }
+
+                if (pilot != null)
+                {
+                    pilot.PilotTags.Add("pilot_" + describer.ToLower());
+
+                    string details = pilot.Description.Details;
+                    details += $"<b>{describer} Training Recruit:</b> Training with {simGame.CompanyName} on {simGame.CurSystem.Name}, gave this mechwarrior a taste for the mercenary life. During training the mercenary company left an impression on the recruit and this gave them the aim of joining that mercenary company.  A life in space appealing more to {pilot.Description.Name} rather than the potential for {describer} garrison duty.\r\n\r\n";
+                    Traverse.Create(pilot.Description).Property("Details").SetValue(details);
+
+                    simGame.AddPilotToHiringHall(pilot, simGame.CurSystem);
+
+                    string message = $"{pilot.Description.FullName()}, one of the {describer} training recruits, that we trained, has expressed an interest in becoming a mercenary. We have the blessing of {describer}, as part of our contract included the option to recruit a willing cadet. You will find them in the {simGame.CurSystem.Name} Hiring Hall awaiting our decision.";
+                    string desc = "Training Recruit";
+                    PauseNotification.Show(desc, message, pilot.GetPortraitSprite(pilot.DataManager), string.Empty, false);
+
+
+                    Log.Info($"Name: {pilot.Description.FullName()} Tags: {pilot.PilotTags.ToString()} Abilities: {pilot.AbilityDefs.ToString()} Icon: {pilot.Description.Icon}");
+                    Log.Info($"Details: {pilot.Description.Details}");
+                    Log.Info($"Stats: Gunnery: {pilot.BaseGunnery} | Piloting: {pilot.BasePiloting} | Guts: {pilot.BaseGuts} | Tactics: {pilot.BaseTactics} :: {pilot.Level} :: {pilot.GetStats().ToString()}");
+                }
+                else
+                {
+                    Log.Info($"[WARNING] Reward Pilots Couldn't be found");
+                }
+            }
+            else
+            {
+                Log.Info($"[WARNING] Trainee List is empty, this shouldn't happen unless Roster has all possible Recruits, list of pilots is: {DeploymentInfo.MDStats.PilotTraining}");
+            }    
+        }
+
         public static void MercDeployment_Rewards(SimGameState simGame, int daysRemaining = 0)
         {
             PostDeploymentStats(simGame, out int bonus, out KeyValuePair<int, int> moralityReward, out string houseView, out string rewardStats);
@@ -687,6 +924,8 @@ namespace VXIContractHiringHubs
             int repBonus = Main.Settings.DeploymentRepBonus;
             double repPenalty = 1;
             double penalty = 0;
+
+            TraineeReward(simGame, daysRemaining);
             
             if (daysRemaining > 0)
             {
@@ -878,7 +1117,7 @@ namespace VXIContractHiringHubs
 
             hiddenStats += $"=== [HIDDEN] Stats ==={Environment.NewLine}";
             hiddenStats += $"Professional Missions (Result) : {DeploymentInfo.MDStats.ProfessionalCount} ({!DeploymentInfo.MDStats.ProfessionalFail}){Environment.NewLine}";
-            hiddenStats += $"Pilots Training Ratios : {DeploymentInfo.MDStats.PilotTraining[1]}[P1]:{DeploymentInfo.MDStats.PilotTraining[2]}[P2]:{DeploymentInfo.MDStats.PilotTraining[3]}[P3]:{DeploymentInfo.MDStats.PilotTraining[4]}[P4]:{DeploymentInfo.MDStats.PilotTraining[5]}[P5]{Environment.NewLine}";
+            hiddenStats += $"Pilots Training Ratios (1-6) : {DeploymentInfo.MDStats.PilotTraining.ToString()}{Environment.NewLine}";
 
             Log.Info($"{deploymentStats}{Environment.NewLine}");
             Log.Info($"{contractStats}{Environment.NewLine}");

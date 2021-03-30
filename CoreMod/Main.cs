@@ -4,14 +4,13 @@ using System.Reflection;
 using Harmony;
 using Newtonsoft.Json;
 using Helpers;
-using static VXIContractHiringHubs.MercGuildDictionary;
+using System.Collections.Generic;
 
 namespace VXIContractHiringHubs
 {
     public static class Main
     {
         #region Init
-
         public static void Init(string modDir, string settings)
         {
             var harmony = HarmonyInstance.Create("BattleTech.VXI.ContractHiringHubs");
@@ -21,6 +20,7 @@ namespace VXIContractHiringHubs
             {
                 Settings = JsonConvert.DeserializeObject<ModSettings>(settings);
                 Settings.modDirectory = modDir;
+
             }
             catch (Exception)
             {
@@ -29,12 +29,41 @@ namespace VXIContractHiringHubs
 
             // blank the logfile
             Log.Clear();
-            Log.Info("VXIContractHiringHubs DIR: " + modDir);
+            Log.Info($"VXIContractHiringHubs {Settings.Version} DIR: {modDir}");
             PrintObjectFields(Settings, "Settings");
 
             try
             {
-                BuildAllDictionaries();
+                if (GlobalMethods.TryLoadAssembly("/FullXotlTables/", "FullXotlTables.dll", "FullXotlTables.ModSettings", new XOTL_ModSettings(), out XOTL_Settings))
+                {
+                    XOTL_Loaded = true;
+                    //XOTL_ModSettings temp = new XOTL_ModSettings();
+
+                    if (Settings.FullXotlTables_UnitToFactionCollection.Count > 0)
+                    {
+                        foreach (KeyValuePair<string, string> keyValue in Settings.FullXotlTables_UnitToFactionCollection)
+                        {
+                            if (XOTL_Settings.UnitToFactionCollection.ContainsKey(keyValue.Key))
+                            {
+                                XOTL_Settings.UnitToFactionCollection.Add(keyValue.Key, keyValue.Value);
+                            }
+                        }
+                    }
+
+                    if (Settings.FullXotlTables_UnitToFactionVeeCollection.Count > 0)
+                    {
+                        foreach (KeyValuePair<string, string> keyValue in Settings.FullXotlTables_UnitToFactionVeeCollection)
+                        {
+                            if (XOTL_Settings.UnitToFactionVeeCollection.ContainsKey(keyValue.Key))
+                            {
+                                XOTL_Settings.UnitToFactionVeeCollection.Add(keyValue.Key, keyValue.Value);
+                            }
+                        }
+                    }
+                }
+
+                MercDeployDictionary.BuildDeployDictionaries();
+                MercGuildDictionary.BuildMercDictionaries();
                 //PrepareDialogues(-99);
             }
             catch (Exception e)
@@ -73,6 +102,8 @@ namespace VXIContractHiringHubs
         #endregion
 
         internal static ModSettings Settings;
+        internal static bool XOTL_Loaded;
+        internal static dynamic XOTL_Settings = new XOTL_ModSettings();
     }
     
 }

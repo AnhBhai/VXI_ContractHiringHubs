@@ -1,13 +1,32 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
+using System.IO;
 using System.Reflection;
-using System.Text;
 
 namespace Helpers
 {
     class GlobalMethods
     {
+        public static bool TryLoadAssembly(string modFolder, string nameDLL, string assemblyClass, dynamic secondaryClass, out dynamic dynamicClass)
+        {
+            string assemblyFullName = Path.Combine(Directory.GetParent($"{ VXIContractHiringHubs.Main.Settings.modDirectory}").FullName + modFolder, nameDLL);
+
+            if (File.Exists(assemblyFullName))
+            {
+                var RealAssembly = Assembly.LoadFrom(assemblyFullName);
+                var TheClass = RealAssembly.GetType(assemblyClass);
+                dynamicClass = Activator.CreateInstance(TheClass);
+
+                return true;
+            }
+            else
+            {
+                dynamicClass = secondaryClass;
+                
+                return false;
+            }
+        }
+
         public static bool ContainsKeyValue(Dictionary<string, string> dictionary, string expectedKey, string expectedValue)
         {
             string actualValue;
@@ -17,6 +36,18 @@ namespace Helpers
             }
             return actualValue == expectedValue;
         }
+
+        //public static bool ContainsKeyValue( dictionary, string expectedKey, string expectedValue)
+        //{
+        //    KeyValuePair<string, Dictionary<string, List<string>>> actualValue;
+        //    if (!dictionary.TryGetValue(expectedKey, out actualValue))
+        //    {
+        //        return false;
+        //    }
+            
+        //    return actualValue.Key == expectedValue;
+        //}
+
         /// <summary>
         /// Uses reflection to get the field value from an object.
         /// </summary>
@@ -32,6 +63,13 @@ namespace Helpers
                 | BindingFlags.Static;
             FieldInfo field = type.GetField(fieldName, bindFlags);
             return field.GetValue(instance);
+        }
+
+        internal static object GetMethodToInvoke(Type type, object instance, string methodName, params object [] parameters)
+        {
+            var func = type.GetMethod(methodName, BindingFlags.Instance | BindingFlags.NonPublic);
+            
+            return func.Invoke(instance, parameters);
         }
 
         public static string AddOrdinal(int num)

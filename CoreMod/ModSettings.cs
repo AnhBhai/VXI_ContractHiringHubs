@@ -1,10 +1,12 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using BattleTech;
 
 namespace VXIContractHiringHubs
 {
     public class ModSettings
     {
+        public string Version = "0.3.0.0";
         public bool Debug = false;
         public string modDirectory;
 
@@ -34,6 +36,12 @@ namespace VXIContractHiringHubs
         public int MinorFactionPilotPct = 30;
         public int RegionalFactionPilotPct = 15;
 
+        public List<int> MercGuildPilotClanMRBPct = new List<int>();
+		public List<int> MercPilotClanMRBPct = new List<int>();
+        public int MercPilotBondsman = 1;
+        public int MercPilotBondsref = 15;
+        public int MercPilotBondsmanMax = 10;
+
         public int MercDeploymentsPct = 50;
         public int MajorDeploymentsPct = 40;
         public int MinorDeploymentsPct = 25;
@@ -48,6 +56,7 @@ namespace VXIContractHiringHubs
         public int MajorContracts = 4;
         public int MinorContracts = 2;
         public int RegionalContracts = 1;
+        public int SpecialContracts = 3;
 
         public List<string> MercDeployCategory = new List<string>();
         public Dictionary<string, int> MercDeploySubType = new Dictionary<string, int>();
@@ -61,7 +70,10 @@ namespace VXIContractHiringHubs
         public Dictionary<string, List<string>> AlliedFactions = new Dictionary<string, List<string>>();
         public Dictionary<string, List<string>> EnemyFactions = new Dictionary<string, List<string>>();
         public Dictionary<string, List<string>> SpecialFactions = new Dictionary<string, List<string>>();
-        
-                    
+
+        public Dictionary<int, int> ProgressiveTrainees = new Dictionary<int, int>();
+
+        public Dictionary<string, string> FullXotlTables_UnitToFactionCollection = new Dictionary<string, string>();
+        public Dictionary<string, string> FullXotlTables_UnitToFactionVeeCollection = new Dictionary<string, string>();
     }
 }

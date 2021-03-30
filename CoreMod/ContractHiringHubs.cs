@@ -1,27 +1,25 @@
 ﻿using System;
 using System.Collections.Generic;
-using BattleTech.UI.TMProWrapper;
-using System.Linq;
-using System.Text;
-using System.IO;
-using System.Reflection;
 using Harmony;
-using HBS.Collections;
 using BattleTech;
 using BattleTech.UI;
-using BattleTech.Serialization;
 using VXIContractManagement;
 using Helpers;
 using static Helpers.ContractHiringHub_Save;
 using static Helpers.GlobalMethods;
-using System.Collections;
 using BattleTech.Framework;
+using UnityEngine;
 
 namespace VXIContractHiringHubs
 {
     public static class ContractHiringHubs
     {
         public static double PercentageExpenses = 0.25;
+        public static DateTime MonthlyUpdate = new DateTime(3000, 3, 9);
+        public static bool PauseAfterJump = false;
+        //public static int BlockedTravelState = 0;
+        public static bool PauseTimer = false;
+
         public static void UpdateTheHubs(SimGameState simGame)
         {
             try
@@ -29,6 +27,7 @@ namespace VXIContractHiringHubs
                 if (InfoClass.DeploymentInfo.IsDeployment && InfoClass.DeploymentInfo.IsGenInitContracts)
                 {
                     Log.Info("Update the deployment");
+                    
                     MercDeployment.UpdateDeployment(simGame);
                 }
                 else if (InfoClass.MercGuildInfo.IsGenInitContracts)
@@ -37,10 +36,16 @@ namespace VXIContractHiringHubs
                     MercGuild.UpdateMercGuild(simGame);
                 }
 
-                if (!InfoClass.MercPilotInfo.IsGenInitPilots)
+                if (InfoClass.MercPilotInfo.IsGenInitPilots)
                 {
                     Log.Info("Update the Pilots"); // Update the Pilots
                     MercPilots.UpdateMercPilots(simGame);
+                }
+
+                if (simGame.CurrentDate >= MonthlyUpdate && simGame.CurrentDate.Year >= 3052 && simGame.CurrentDate.Month >= 6 && !MercSpecial.isReformation)
+                {
+                    Log.Info("Update the Reformation Act");
+                    MercSpecial.ReformationAct(simGame);
                 }
             }
             catch (Exception e)
@@ -48,6 +53,60 @@ namespace VXIContractHiringHubs
                 Log.Error(e);
             }
         }
+
+        #region Test Functions
+        [HarmonyPatch(typeof(SimGameState), "SetSimRoomState")]
+        class SimGameState_SetSimRoomState_Patch
+        {
+            public static bool Prefix(SimGameState __instance, DropshipLocation state)
+            {
+                //if (state == DropshipLocation.CMD_CENTER && Input.GetKey(KeyCode.LeftShift))
+                //{
+                //    List<string> listString = new List<string>();
+                //    listString.Add("ThreeWayBattle_TrainingDay");
+
+                //    GenerateContract generateContract = new GenerateContract();
+                //    generateContract.MaxContracts = __instance.CurSystem.SystemContracts.Count + 1;
+                //    generateContract.MaxDifficulty = 10;
+                //    generateContract.MinDifficulty = 1;
+                //    GenerateContractFactions.setContractFactionsBasedOnRandom(generateContract, __instance, __instance.CurSystem);
+
+                //    Dictionary<int, string> dictionary = new Dictionary<int, string>();
+
+                //    dictionary.Add(0, "pilot_recruit_R1_01a");
+                //    dictionary.Add(1, "pilot_recruit_R2_01a");
+                //    dictionary.Add(2, "pilot_recruit_R3_01a");
+
+                //    generateContract.PlayerTeamOverride.Add(0, dictionary);
+
+                //    generateContract.BuildProceduralContracts(__instance, null, false, listString);
+                //}
+
+                //if (state == DropshipLocation.HIRING && Input.GetKey(KeyCode.LeftShift))
+                //{
+                //    MercPilots.UpdateMercPilots(__instance);
+                //}
+
+                //if (state == DropshipLocation.BARRACKS && Input.GetKey(KeyCode.LeftShift))
+                //{
+                //    List<FactionValue> factionValue = new List<FactionValue>();
+
+                //    factionValue.AddRange(FactionEnumeration.FactionList.FindAll((FactionValue faction) => faction.IsClan));
+
+                //    MercPilots.EndClanMission(__instance, factionValue.GetRandomElement());
+                //}
+
+                if (state == DropshipLocation.NAVIGATION && Input.GetKey(KeyCode.LeftAlt))
+                {
+                    PauseAfterJump = !PauseAfterJump;
+                    PauseNotification.Show("Pause After Jump", $"Holding at Jump Point, after jump set to {PauseAfterJump}", __instance.GetCrewPortrait(SimGameCrew.Crew_Sumire), "", false);
+                    return false;
+                }
+
+                return true;
+            }
+        }
+        #endregion
 
         #region Reset at end of MercGuild or Deployment
         // Reset all travel contracts and penalise costs
@@ -83,11 +142,49 @@ namespace VXIContractHiringHubs
             {
                 try
                 {
-                    if (InfoClass.DeploymentInfo.IsDeployment)
-                    {
+                    //if (InfoClass.DeploymentInfo.IsDeployment)
+                    //{
                         
-                    }
+                    //}
                     InfoClass.MercGuildInfo.ClearInfo();
+
+                    if (__instance.CompletedContract != null)
+                    {
+                        List<UnitResult> playerUnitResults = __instance.CompletedContract.PlayerUnitResults;
+                        List<Pilot> list = new List<Pilot>(__instance.PilotRoster);
+                        list.Add(__instance.Commander);
+                        foreach (UnitResult unitResult in playerUnitResults)
+                        {
+                            foreach (Pilot pilot in list)
+                            {
+                                if (unitResult.pilot.pilotDef.Description.Id == pilot.pilotDef.Description.Id)
+                                {
+                                    MercPilots.LastUsedMechs(__instance, pilot, unitResult.mech.Name);
+                                }
+                            }
+                        }
+                    }
+                }
+                catch (Exception e)
+                {
+                    Log.Error(e);
+                }
+            }
+
+            public static void Postfix(ref SimGameState __instance)
+            {
+                try
+                {
+                    FactionValue targetValue = __instance.CompletedContract.Override.targetTeam.FactionValue;
+                    FactionValue tgtAllyValue = __instance.CompletedContract.Override.targetsAllyTeam.FactionValue;
+                    
+                    if (targetValue.IsClan)
+                    {
+                        bool result = MercPilots.EndClanMission(__instance, targetValue);
+
+                        if (result && tgtAllyValue.IsClan)
+                            MercPilots.EndClanMission(__instance, tgtAllyValue);
+                    }
                 }
                 catch (Exception e)
                 {
@@ -189,8 +286,8 @@ namespace VXIContractHiringHubs
             }
         }
 
-            //[HarmonyPatch(typeof(SGRoomController_CmdCenter), "StartContractScreen")]
-            [HarmonyPatch(typeof(StarSystem), "GenerateInitialContracts")]
+        //[HarmonyPatch(typeof(SGRoomController_CmdCenter), "StartContractScreen")]
+        [HarmonyPatch(typeof(StarSystem), "GenerateInitialContracts")]
         public static class StarSystem_GenerateInitialContracts_Patch
         {
             static bool Prefix(StarSystem __instance)
@@ -231,23 +328,6 @@ namespace VXIContractHiringHubs
             }
         }
 
-        //[HarmonyPatch(typeof(StarSystem), "OnInitialContractFetched")]
-        //public static class StarSystem_OnInitialContractFetched_Patch
-        //{
-        //    public static void Postfix(StarSystem __instance)
-        //    {
-        //        try
-        //        {
-        //            Log.Info("Initial Contracts Fetched so Update the Hubs");
-        //            ContractHiringHubs.UpdateTheHubs(__instance.Sim);
-        //        }
-        //        catch (Exception e)
-        //        {
-        //            Log.Error(e);
-        //        }
-        //    }
-        //}
-
         //[HarmonyPatch(typeof(SimGameState), "FillMapEncounterContractData")]
         //public static class SimGameState_FillMapEncounterContractData_Patch
         //{ 
@@ -280,11 +360,16 @@ namespace VXIContractHiringHubs
                 {
                     if (!contract.CanNegotiate)
                     {
-                        //isOpportunityMission = true;
-                        Log.Info($"[SGContractsWidget_AddContract_PREFIX] {contract.Override.ID} is a non-negotiable Merc Guild mission");
+                        //SimGameState simGame = GetInstanceField(typeof(SGContractsWidget), __instance, "Sim") as SimGameState;
+                        string seedGUID = contract.Override.travelSeed + contract.encounterObjectGuid;
+                        if (NonGlobalTravelContracts.GuidContralDetails.ContainsKey(seedGUID))
+                        {
+                            //isOpportunityMission = true;
+                            Log.Info($"[SGContractsWidget_AddContract_PREFIX] {contract.Override.ID} is a non-negotiable Merc Guild mission");
 
-                        // Temporarily set contractDisplayStyle
-                        contract.Override.contractDisplayStyle = ContractDisplayStyle.BaseCampaignStory;
+                            // Temporarily set contractDisplayStyle
+                            contract.Override.contractDisplayStyle = ContractDisplayStyle.BaseCampaignStory;
+                        }
                     }
                 }
                 catch (Exception e)
@@ -336,6 +421,7 @@ namespace VXIContractHiringHubs
         }
         #endregion
 
+        #region Event based triggers
         [HarmonyPatch(typeof(Contract), "GenerateSalvage")]
         //[HarmonyAfter(new string[] { "com.github.mcb5637.BTSimpleMechAssembly" })]
         public static class Contract_GenerateSalvage_Patch
@@ -344,15 +430,20 @@ namespace VXIContractHiringHubs
             {
                 try
                 {
+                    SimGameState simGame = __instance.BattleTechGame.Simulation;
+
                     Log.Info("Build stats post Battle and Launch any Deployment");
                     if (InfoClass.MercGuildInfo.IsDeployment && !InfoClass.DeploymentInfo.IsDeployment)
                     {
-                        MercDeployment.MercDeployment_Start(__instance.BattleTechGame.Simulation, __instance.Override.employerTeam.FactionValue.Name);
+                        Log.Info("Launching Deployment");
+                        //MercDeployDictionary.BuildDeployDictionaries();
+                        MercDeployment.MercDeployment_Start(simGame, __instance.Override.employerTeam.FactionValue.Name);
                         NonGlobalTravelContracts.GuidContralDetails.Clear();
                     }
                     else if (InfoClass.DeploymentInfo.IsDeployment)
                     {
-                        MercDeployment.RetrieveContractToUpdate(__instance.BattleTechGame.Simulation, __instance.Override.ID, __instance.TheMissionResult);
+                        Log.Info("Building stats post Battle");
+                        MercDeployment.RetrieveContractToUpdate(simGame, __instance.Override.ID, __instance.TheMissionResult);
                     }
                 }
                 catch (Exception e)
@@ -484,9 +575,113 @@ namespace VXIContractHiringHubs
                 InfoClass.MercGuildInfo.IsGenInitContracts = false;
                 InfoClass.MercPilotInfo.IsGenInitPilots = false;
                 InfoClass.DeploymentInfo.IsGenInitContracts = false;
-                //MercDeployment.MercDeployment_Start(__instance.Sim);
             }
         }
+
+        [HarmonyPatch(typeof(StarSystem), "OnSystemChange")]
+        public static class StarSystem_OnSystemChange_Patch
+        {
+            public static void Prefix(StarSystem __instance)
+            {
+                if (PauseAfterJump)
+                {
+                    __instance.Sim.SetTimeMoving(false, true);
+                    __instance.Sim.PauseTimer();
+
+                    PauseTimer = true;
+                    Log.Info($"Pausing after jump");
+                }
+            }
+        }
+
+        [HarmonyPatch(typeof(SGTimePlayPause), "ToggleTime")]
+        public static class SGTimePlayPause_ToggleTime_Patch
+        {
+            public static void Prefix(SGTimePlayPause __instance)
+            {
+                if (PauseAfterJump && PauseTimer)
+                {
+                    SimGameState simGame = GetInstanceField(typeof(SGTimePlayPause), __instance, "simState") as SimGameState;
+                    simGame.ResumeTimer();
+
+                    PauseTimer = false;
+                    Log.Info($"Allowing Resume Timer");
+                }
+            }
+        }
+
+
+        //[HarmonyPatch(typeof(SGNavigationScreen), "OnTravelButtonClicked")]
+        //public static class SGNavigationScreen_OnTravelButtonClicked_Patch
+        //{
+        //    public static bool StartBurn = false;
+        //    public static bool Prefix(SGNavigationScreen __instance)
+        //    {
+        //        SimGameState simGame = GetInstanceField(typeof(SGNavigationScreen), __instance, "simState") as SimGameState;
+        //        if (PauseAfterJump && PauseTimer && simGame.TravelState == SimGameTravelStatus.TRANSIT_FROM_JUMP)
+        //        {
+        //            simGame.TravelManager.SetTravelState(SimGameTravelStatus.IN_SYSTEM, true);
+
+        //            StartBurn = true;
+        //        }
+        //    }
+
+        //    public static void Postfix(SGNavigationScreen __instance)
+        //    {
+        //        SimGameState simGame = GetInstanceField(typeof(SGNavigationScreen), __instance, "simState") as SimGameState;
+        //        if (StartBurn)
+        //        {
+        //            //simGame.TravelManager.SetTravelState(SimGameTravelStatus.TRANSIT_FROM_JUMP, true);
+        //            StartBurn = false;
+        //            simGame.ResumeTimer();
+        //        }
+        //    }
+        //}
+
+        //[HarmonyPatch(typeof(SGTravelManager), "HandleNextTravelStep")]
+        // public static class SGTravelManager_HandleNextTravelStep_Patch
+        // {
+        //     public static bool Prefix(SGTravelManager __instance)
+        //     {
+        //         SimGameState simGame = GetInstanceField(typeof(SGTravelManager), __instance, "simState") as SimGameState;
+        //         if (BlockedTravelState >= 0 && PauseAfterJump && simGame.Starmap.GetDestinationSystem() == simGame.Starmap.GetNextSystemInTravel() && __instance.TravelState == SimGameTravelStatus.WARMING_ENGINES)
+        //         {
+        //             //__instance.SetTravelState(SimGameTravelStatus.WARMING_ENGINES, false);
+        //             //simGame.SetTravelTime(simGame.Starmap.CurPlanet.Cost, null);
+        //             //simGame.Starmap.CurPlanet.Cost.AddFunds(-this.simState.Constants.Finances.JumpShipCost, null, true, true);
+
+        //             BlockedTravelState = 1;
+        //             Log.Info($"Blocking TRANSIT_FROM_JUMP");
+        //             return false;
+
+        //         }
+        //         else if (PauseAfterJump)
+        //         {
+        //             BlockedTravelState = 0;
+
+        //             Log.Info($"Unblocking TRANSIT_FROM_JUMP");
+        //         }
+        //         return true;
+        //     }
+        // }
+
+        [HarmonyPatch(typeof(StarSystem), "GeneratePilots")]
+        public static class StarSystem_GeneratePilots_Patch
+        {
+            public static void Postfix(StarSystem __instance)
+            {
+                try
+                {
+                    InfoClass.MercPilotInfo.IsGenInitPilots = true;
+                    UpdateTheHubs(__instance.Sim);
+                }
+                catch (Exception e)
+                {
+                    Log.Error(e);
+                }
+            }
+        }
+        #endregion
 
         #region Periodic Time Based Events
         [HarmonyPatch(typeof(SimGameState), "OnDayPassed")]
@@ -522,40 +717,40 @@ namespace VXIContractHiringHubs
         //}
         #endregion
 
-        [HarmonyPatch(typeof(SGSystemViewPopulator), "UpdateRoutedSystem")]
-        public static class SGSystemViewPopulator_UpdateRoutedSystem_Patch
-        {
-            static void Postfix(SGSystemViewPopulator __instance)
-            {
-                try
-                {
-                    StarSystem starSystem = (StarSystem)AccessTools.Field(typeof(SGSystemViewPopulator), "starSystem").GetValue(__instance);
-                    List<LocalizableText> systemDescriptionFields = GetInstanceField(typeof(SGSystemViewPopulator), __instance, "SystemDescriptionFields") as List<LocalizableText>;
-                    List<SGNavigationActiveFactionWidget> systemActiveFactionWidget = GetInstanceField(typeof(SGSystemViewPopulator), __instance, "SystemActiveFactionWidget") as List<SGNavigationActiveFactionWidget>;
-                    //string SystemDesc = starSystem.Def.Description.Details;
+        //[HarmonyPatch(typeof(SGSystemViewPopulator), "UpdateRoutedSystem")]
+        //public static class SGSystemViewPopulator_UpdateRoutedSystem_Patch
+        //{
+        //    static void Postfix(SGSystemViewPopulator __instance)
+        //    {
+        //        try
+        //        {
+        //            StarSystem starSystem = (StarSystem)AccessTools.Field(typeof(SGSystemViewPopulator), "starSystem").GetValue(__instance);
+        //            List<LocalizableText> systemDescriptionFields = GetInstanceField(typeof(SGSystemViewPopulator), __instance, "SystemDescriptionFields") as List<LocalizableText>;
+        //            List<SGNavigationActiveFactionWidget> systemActiveFactionWidget = GetInstanceField(typeof(SGSystemViewPopulator), __instance, "SystemActiveFactionWidget") as List<SGNavigationActiveFactionWidget>;
+        //            //string SystemDesc = starSystem.Def.Description.Details;
 
-                    //string jumpTravel = starSystem.JumpDistance.ToString();
-                    __instance.SetField(systemDescriptionFields, $"[JUMP DISTANCE (IN-SYSTEM): {starSystem.JumpDistance}DAYS]{Environment.NewLine}{Environment.NewLine}{starSystem.Def.Description.Details}");
-                    //__instance.SetField(GetInstanceField(typeof(SGSystemViewPopulator), __instance, "SystemTravelTime") as List<LocalizableText>, $"{starSystem.Sim.Starmap.ProjectedTravelTime} (Incl. {jumpTravel}Days Insystem travel)");
-                    //__instance.SetField(GetInstanceField(typeof(SGSystemViewPopulator), __instance, "SystemNameFields") as List<LocalizableText>, $"{starSystem.Name}{Environment.NewLine}[Insystem travel is {jumpTravel}DAYS]");
+        //            //string jumpTravel = starSystem.JumpDistance.ToString();
+        //            __instance.SetField(systemDescriptionFields, $"[JUMP DISTANCE (IN-SYSTEM): {starSystem.JumpDistance}DAYS]{Environment.NewLine}{Environment.NewLine}{starSystem.Def.Description.Details}");
+        //            //__instance.SetField(GetInstanceField(typeof(SGSystemViewPopulator), __instance, "SystemTravelTime") as List<LocalizableText>, $"{starSystem.Sim.Starmap.ProjectedTravelTime} (Incl. {jumpTravel}Days Insystem travel)");
+        //            //__instance.SetField(GetInstanceField(typeof(SGSystemViewPopulator), __instance, "SystemNameFields") as List<LocalizableText>, $"{starSystem.Name}{Environment.NewLine}[Insystem travel is {jumpTravel}DAYS]");
 
-                    if (systemActiveFactionWidget != null)
-                    {
-                        List<string> systemFactions = new List<string>();
-                        systemFactions.AddRange(starSystem.Def.ContractEmployerIDList);
-                        systemFactions.AddRange(starSystem.Def.ContractTargetIDList.Where(x => !starSystem.Def.ContractEmployerIDList.Contains(x) && x != FactionEnumeration.GetAuriganDirectorateFactionValue().Name));
-                        systemActiveFactionWidget.ForEach(delegate (SGNavigationActiveFactionWidget widget)
-                        {
-                            widget.ActivateFactions(systemFactions, starSystem.Def.OwnerValue.Name);
-                        });
-                    }
-                }
-                catch (Exception e)
-                {
-                    Log.Error(e);
-                }
-            }
-        }
+        //            if (systemActiveFactionWidget != null)
+        //            {
+        //                List<string> systemFactions = new List<string>();
+        //                systemFactions.AddRange(starSystem.Def.ContractEmployerIDList);
+        //                systemFactions.AddRange(starSystem.Def.ContractTargetIDList.Where(x => !starSystem.Def.ContractEmployerIDList.Contains(x) && x != FactionEnumeration.GetAuriganDirectorateFactionValue().Name));
+        //                systemActiveFactionWidget.ForEach(delegate (SGNavigationActiveFactionWidget widget)
+        //                {
+        //                    widget.ActivateFactions(systemFactions, starSystem.Def.OwnerValue.Name);
+        //                });
+        //            }
+        //        }
+        //        catch (Exception e)
+        //        {
+        //            Log.Error(e);
+        //        }
+        //    }
+        //}
 
         //// When starting a new career
         //[HarmonyPatch(typeof(SGCharacterCreationCareerBackgroundSelectionPanel), "Done")]

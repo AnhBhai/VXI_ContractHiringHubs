@@ -17,6 +17,7 @@ using UnityEngine.Events;
 using VXIContractManagement;
 using Helpers;
 using static Helpers.GlobalMethods;
+using static VXIContractHiringHubs.MercGuildDictionary;
 
 namespace VXIContractHiringHubs
 {
@@ -85,6 +86,97 @@ namespace VXIContractHiringHubs
             return targetFaction;
         }
 
+        public static KeyValuePair<FactionValue, List<StarSystem>> RetrieveRaidSystems(SimGameState simGame, Dictionary<string, List<string>> targetSystems)
+        {
+            Dictionary<FactionValue, List<StarSystem>> targetDict = new Dictionary<FactionValue, List<StarSystem>>();
+
+            foreach (KeyValuePair<string, List<string>> targetList in targetSystems)
+            {
+                FactionValue targetFaction = GenerateContractFactions.GetFactionValueFromString(targetList.Key);
+                List<StarSystem> systems = new List<StarSystem>();
+                if (targetFaction != FactionEnumeration.GetInvalidUnsetFactionValue())
+                {
+                    foreach (string targetSystem in targetList.Value)
+                    {
+                        StarSystem starSystem = simGame.StarSystems.Find(x => x.Name == targetSystem);
+
+                        if (starSystem != null)
+                        {
+                            if (starSystem.OwnerValue == targetFaction)
+                            {
+                                systems.Add(starSystem);
+                            }
+                        }
+                    }
+
+                    if (systems.Count > 0)
+                        targetDict.Add(targetFaction, systems);
+                }
+            }
+
+            if (targetDict.Count <= 0)
+            {
+                KeyValuePair<FactionValue, List<StarSystem>> targetFactionList = new KeyValuePair<FactionValue, List<StarSystem>>(FactionEnumeration.GetInvalidUnsetFactionValue(), new List<StarSystem>());
+                return targetFactionList;
+            }
+            else
+            {
+                KeyValuePair<FactionValue, List<StarSystem>> targetFactionList = targetDict.GetRandomElement(simGame.NetworkRandom);
+                return targetFactionList;
+            }
+        }
+
+        public static bool GetRaid(string system, string systemOwner, out Dictionary<string, List<string>> targetSystems)
+        {
+            Dictionary<string, List<string>> outTargetSystems = new Dictionary<string, List<string>>();
+
+            foreach (Raid raid in RaidSystems)
+            {
+                if (raid.System.Equals(system) && raid.System.Equals(systemOwner))
+                {
+                    targetSystems = raid.Targets;
+                    return true;
+                }
+            }
+
+            targetSystems = outTargetSystems;
+
+            return false;
+        }
+
+        public static void RaidContracts(SimGameState simGame, int startingTotalMissions, Dictionary<string, List<string>> targetSystems)
+        {
+            int totalMissions = startingTotalMissions;
+            int noGenMissions;
+
+            string longDesc = $"Careful this is the Clan occupation zone, we'll get generous salvage on this contract and our employer will cover jump costs and {ContractHiringHubs.PercentageExpenses * 100}% of our operating costs during travel. ";
+
+            KeyValuePair<FactionValue, List<StarSystem>> targetFaction = RetrieveRaidSystems(simGame, targetSystems);
+
+            if (targetFaction.Key == FactionEnumeration.GetInvalidUnsetFactionValue())
+            {
+                for (int i = 0; totalMissions - startingTotalMissions < Main.Settings.SpecialContracts && i < Main.Settings.SpecialContracts * 2; i++)
+                {
+                    StarSystem targetSystem = targetFaction.Value.GetRandomElement<StarSystem>(simGame.NetworkRandom);
+
+                    GenerateContract generateContract = new GenerateContract();
+                    generateContract.MaxContracts = totalMissions + 1;
+                    generateContract.SalaryPct = 0.5f;
+                    generateContract.SalvagePct = 1.0f;
+                    generateContract.BuffSalvage = true;
+                    generateContract.strictTargetReq = generateContract.strictOwnerReq = true;
+                    generateContract.LongDescriptionStart = longDesc;
+                    Log.Info("*** Create contract for " + targetSystem.Name + " [ " + targetFaction.Key.Name + " ] ***");
+
+                    generateContract.ContractTarget = GenerateContractFactions.SetProceduralFactionID(targetFaction.Key);
+                    GenerateContractFactions.setContractFactionsBasedOnSystems(generateContract, simGame, simGame.CurSystem, targetSystem);
+
+                    noGenMissions = generateContract.GenerateProceduralContracts(simGame, targetSystem, false, false, false);
+                    totalMissions = noGenMissions;
+                }
+            }
+        }
+
         // BUILD Salvage/Paymment defaults for different factions
         // INTEREST SimGameState.StartLanceConfiguration
         public static void UpdateMercGuild(SimGameState simGame)
@@ -133,13 +225,14 @@ namespace VXIContractHiringHubs
                             generateContract.BuffSalvage = true;
                             generateContract.strictTargetReq = generateContract.strictOwnerReq = true;
                             generateContract.LongDescriptionStart = longDesc;
+                            generateContract.strictTargetReq = true;
                             Log.Info("*** Create contract for " + targetSystem.Name + " [ " + targetFaction.Key.Name + " ] ***");
 
                             if (simGame.NetworkRandom.Int(0, 100 + 1) + lastDeploy <= Main.Settings.MercDeploymentsPct && deploymentMissions < Main.Settings.MercDeploymentsMax)
                             {
                                 deploymentMissions = MercDeployment.MercGuildDeployment(generateContract, simGame, targetFaction.Key, targetSystem, deploymentMissions);
                             }
-                            
+
                             generateContract.ContractTarget = GenerateContractFactions.SetProceduralFactionID(targetFaction.Key);
                             GenerateContractFactions.setContractFactionsBasedOnSystems(generateContract, simGame, simGame.CurSystem, targetSystem);
 
@@ -156,7 +249,7 @@ namespace VXIContractHiringHubs
                         for (int i = 0; totalMissions < Main.Settings.MajorContracts && i < Main.Settings.MajorContracts * 2; i++)
                         {
                             clearFirst = i == 0;
-                            string tmpDeployFaction = tmpDeployFaction = FactionEnumeration.ProceduralContractFactionList.Where(f => f.IsGreatHouse).ToList().ConvertAll<string>(x => x.Name).GetRandomElement();
+                            string tmpDeployFaction = FactionEnumeration.ProceduralContractFactionList.Where(f => f.IsGreatHouse).ToList().ConvertAll<string>(x => x.Name).GetRandomElement();
 
                             KeyValuePair<FactionValue, List<StarSystem>> targetFaction = RetrieveFactionSystems(simGame, blackList);
                             StarSystem targetSystem = targetFaction.Value.GetRandomElement<StarSystem>(simGame.NetworkRandom);
@@ -166,6 +259,7 @@ namespace VXIContractHiringHubs
                             generateContract.SalaryPct = 0.5f;
                             generateContract.SalvagePct = 1.0f;
                             generateContract.LongDescriptionStart = longDesc;
+                            generateContract.strictTargetReq = true;
                             Log.Info("*** Create contract for " + targetSystem.Name + " [ " + targetFaction.Key.Name + " ] ***");
 
                             if (simGame.NetworkRandom.Int(0, 100 + 1) + lastDeploy <= Main.Settings.MajorDeploymentsPct && deploymentMissions < Main.Settings.MajorDeploymentsMax)
@@ -189,7 +283,7 @@ namespace VXIContractHiringHubs
                         for (int i = 0; totalMissions < Main.Settings.MinorContracts && i < Main.Settings.MinorContracts * 2; i++)
                         {
                             clearFirst = i == 0;
-                            string tmpDeployFaction = tmpDeployFaction = FactionEnumeration.ProceduralContractFactionList.Where(f => f.IsGreatHouse).ToList().ConvertAll<string>(x => x.Name).GetRandomElement();
+                            string tmpDeployFaction = FactionEnumeration.ProceduralContractFactionList.Where(f => f.IsGreatHouse).ToList().ConvertAll<string>(x => x.Name).GetRandomElement();
 
                             KeyValuePair<FactionValue, List<StarSystem>> targetFaction = RetrieveFactionSystems(simGame, blackList);
                             StarSystem targetSystem = targetFaction.Value.GetRandomElement<StarSystem>(simGame.NetworkRandom);
@@ -199,6 +293,7 @@ namespace VXIContractHiringHubs
                             generateContract.SalaryPct = 0.5f;
                             generateContract.SalvagePct = 1.0f;
                             generateContract.LongDescriptionStart = longDesc;
+                            generateContract.strictTargetReq = true;
                             Log.Info("*** Create contract for " + targetSystem.Name + " [ " + targetFaction.Key.Name + " ] ***");
 
                             if (simGame.NetworkRandom.Int(0, 100 + 1) + lastDeploy <= Main.Settings.MinorDeploymentsPct && deploymentMissions < Main.Settings.MinorDeploymentsMax)
@@ -212,7 +307,7 @@ namespace VXIContractHiringHubs
                             noGenMissions = generateContract.GenerateProceduralContracts(simGame, targetSystem, clearFirst, false, false);
                             totalMissions = noGenMissions;
                         }
-                        if (totalMissions >= Main.Settings.MajorContracts)
+                        if (totalMissions >= Main.Settings.MinorContracts)
                             InfoClass.MercGuildInfo.DateHubUpdate = currentDate;
 
                         totalMissions = 0;
@@ -222,7 +317,7 @@ namespace VXIContractHiringHubs
                         for (int i = 0; totalMissions < Main.Settings.RegionalContracts && i < Main.Settings.RegionalContracts * 2; i++)
                         {
                             clearFirst = i == 0;
-                            string tmpDeployFaction = tmpDeployFaction = FactionEnumeration.ProceduralContractFactionList.Where(f => f.IsGreatHouse).ToList().ConvertAll<string>(x => x.Name).GetRandomElement();
+                            string tmpDeployFaction = FactionEnumeration.ProceduralContractFactionList.Where(f => f.IsGreatHouse).ToList().ConvertAll<string>(x => x.Name).GetRandomElement();
 
                             KeyValuePair<FactionValue, List<StarSystem>> targetFaction = RetrieveFactionSystems(simGame, blackList);
                             StarSystem targetSystem = targetFaction.Value.GetRandomElement<StarSystem>(simGame.NetworkRandom);
@@ -232,6 +327,7 @@ namespace VXIContractHiringHubs
                             generateContract.SalaryPct = 0.5f;
                             generateContract.SalvagePct = 1.0f;
                             generateContract.LongDescriptionStart = longDesc;
+                            generateContract.strictTargetReq = true;
                             Log.Info("*** Create contract for " + targetSystem.Name + " [ " + targetFaction.Key.Name + " ] ***");
 
                             if (simGame.NetworkRandom.Int(0, 100 + 1) + lastDeploy <= Main.Settings.RegionalDeploymentsPct && deploymentMissions < Main.Settings.RegionalDeploymentsMax)
@@ -245,8 +341,13 @@ namespace VXIContractHiringHubs
                             noGenMissions = generateContract.GenerateProceduralContracts(simGame, targetSystem, clearFirst, false, false);
                             totalMissions = noGenMissions;
                         }
-                        if (totalMissions >= Main.Settings.MajorContracts)
+                        if (totalMissions >= Main.Settings.RegionalContracts)
                             InfoClass.MercGuildInfo.DateHubUpdate = currentDate;
+
+                        // Special Systems
+                        Dictionary<string, List<string>> raidTargets = new Dictionary<string, List<string>>();
+                        if (GetRaid(currentSystem, currentOwner, out raidTargets))
+                            RaidContracts(simGame, totalMissions, raidTargets);
 
                         totalMissions = 0;
                     }

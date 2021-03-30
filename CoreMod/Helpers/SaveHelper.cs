@@ -56,7 +56,7 @@ namespace Helpers
 
         public int TrainingCount;
         public double TrainingSkulls;
-        public Dictionary<int, int> PilotTraining;
+        public Dictionary<string, int> PilotTraining;
 
         public MercDeploymentStats(bool all = true)
         {
@@ -82,8 +82,9 @@ namespace Helpers
 
             TrainingCount = 0;
             TrainingSkulls = 0;
-            Dictionary<int, int> pilotTraining = new Dictionary<int, int>();
-            pilotTraining.Add(1, 0); pilotTraining.Add(2, 0); pilotTraining.Add(3, 0); pilotTraining.Add(4, 0); pilotTraining.Add(5, 0);
+            Dictionary<string, int> pilotTraining = new Dictionary<string, int>();
+            pilotTraining.Add("pilot_recruit_R1", 0); pilotTraining.Add("pilot_recruit_R2", 0); pilotTraining.Add("pilot_recruit_R3", 0); pilotTraining.Add("pilot_recruit_R4", 0); pilotTraining.Add("pilot_recruit_R5", 0); pilotTraining.Add("pilot_recruit_R6", 0);
+            pilotTraining.Add("pilot_recruit_R7", 0); pilotTraining.Add("pilot_recruit_R8", 0); pilotTraining.Add("pilot_recruit_R9", 0); pilotTraining.Add("pilot_recruit_R10", 0); pilotTraining.Add("pilot_recruit_R11", 0); pilotTraining.Add("pilot_recruit_R12", 0);
             PilotTraining = pilotTraining;
         }
     }
@@ -130,6 +131,8 @@ namespace Helpers
         public MercDeploymentStats MDStats = new MercDeploymentStats(true);
         public Dictionary<string, DeploymentContractInfo> DCInfo = new Dictionary<string, DeploymentContractInfo>();
 
+        public bool CompletedEndGame;
+
         public void ClearInfo()
         {
             DeploymentFactionID = "";
@@ -143,6 +146,7 @@ namespace Helpers
             MissionTypes.Clear();
             DCInfo.Clear();
             //this.ClearMDStats();
+            CompletedEndGame = false;
         }
 
         public void ClearMDStats(bool clearAll = true)
@@ -169,13 +173,17 @@ namespace Helpers
 
             MDStats.TrainingCount = 0;
             MDStats.TrainingSkulls = 0;
-            MDStats.PilotTraining[1] = 0; MDStats.PilotTraining[2] = 0; MDStats.PilotTraining[3] = 0; MDStats.PilotTraining[4] = 0; MDStats.PilotTraining[5] = 0;
+            MDStats.PilotTraining["pilot_recruit_R1"] = 0; MDStats.PilotTraining["pilot_recruit_R2"] = 0; MDStats.PilotTraining["pilot_recruit_R3"] = 0; MDStats.PilotTraining["pilot_recruit_R4"] = 0; MDStats.PilotTraining["pilot_recruit_R5"] = 0; MDStats.PilotTraining["pilot_recruit_R6"] = 0;
+            MDStats.PilotTraining["pilot_recruit_R7"] = 0; MDStats.PilotTraining["pilot_recruit_R8"] = 0; MDStats.PilotTraining["pilot_recruit_R9"] = 0; MDStats.PilotTraining["pilot_recruit_R10"] = 0; MDStats.PilotTraining["pilot_recruit_R11"] = 0; MDStats.PilotTraining["pilot_recruit_R12"] = 0;
         }
     }
 
     public class MercPilotInfo
     {
         public bool IsGenInitPilots = false;
+        public int BondsrefCount = 0;
+        public int BondsmanMax = 0;
+        public Dictionary<Gender, List<int>> PortraitUsed = new Dictionary<Gender, List<int>>();
     }
 
     public static class InfoClass
@@ -189,6 +197,7 @@ namespace Helpers
     {
         public const int MERCGUILD = 0;
         public const int DEPLOYMENT = 1;
+        public const int PILOT = 2;
         public static void SaveState(string instanceGUID, DateTime saveTime, int typeSave)
         {
             try
@@ -213,6 +222,15 @@ namespace Helpers
                         using (StreamWriter writer = new StreamWriter(filePath, true))
                         {
                             string json = JsonConvert.SerializeObject(InfoClass.DeploymentInfo);
+                            writer.Write(json);
+                        }
+                        break;
+                    case PILOT:
+                        filePath = baseDirectory + $"/ModSaves/MercPilotDetails/" + instanceGUID + "-" + unixTimestamp + ".json";
+                        (new FileInfo(filePath)).Directory.Create();
+                        using (StreamWriter writer = new StreamWriter(filePath, true))
+                        {
+                            string json = JsonConvert.SerializeObject(InfoClass.MercPilotInfo);
                             writer.Write(json);
                         }
                         break;
@@ -271,6 +289,20 @@ namespace Helpers
                             }
                         }
                         break;
+                    case PILOT:
+                        string mercPilotPath = baseDirectory + $"/ModSaves/MercPilotDetails/" + instanceGUID + "-" + unixTimestamp + ".json";
+                        if (File.Exists(mercPilotPath))
+                        {
+                            using (StreamReader r = new StreamReader(mercPilotPath))
+                            {
+                                string json = r.ReadToEnd();
+                                MercPilotInfo save = JsonConvert.DeserializeObject<MercPilotInfo>(json);
+                                InfoClass.MercPilotInfo.IsGenInitPilots = save.IsGenInitPilots;
+                                InfoClass.MercPilotInfo.BondsrefCount = save.BondsrefCount;
+                                InfoClass.MercPilotInfo.PortraitUsed = save.PortraitUsed;
+                            }
+                        }
+                        break;
                 }
                 
             }
@@ -318,6 +350,7 @@ namespace Helpers
                 {
                     SaveState(__instance.InstanceGUID, __instance.SaveTime, MERCGUILD);
                     SaveState(__instance.InstanceGUID, __instance.SaveTime, DEPLOYMENT);
+                    SaveState(__instance.InstanceGUID, __instance.SaveTime, PILOT);
                 }
                 catch (Exception e)
                 {
@@ -336,6 +369,7 @@ namespace Helpers
                 {
                     LoadState(save.InstanceGUID, save.SaveTime, MERCGUILD);
                     LoadState(save.InstanceGUID, save.SaveTime, DEPLOYMENT);
+                    LoadState(save.InstanceGUID, save.SaveTime, PILOT);
                 }
                 catch (Exception e)
                 {
