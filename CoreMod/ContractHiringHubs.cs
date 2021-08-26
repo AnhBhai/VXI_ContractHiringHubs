@@ -27,7 +27,7 @@ namespace VXIContractHiringHubs
                 if (InfoClass.DeploymentInfo.IsDeployment && InfoClass.DeploymentInfo.IsGenInitContracts)
                 {
                     Log.Info("Update the deployment");
-                    
+
                     MercDeployment.UpdateDeployment(simGame);
                 }
                 else if (InfoClass.MercGuildInfo.IsGenInitContracts)
@@ -144,7 +144,7 @@ namespace VXIContractHiringHubs
                 {
                     //if (InfoClass.DeploymentInfo.IsDeployment)
                     //{
-                        
+
                     //}
                     InfoClass.MercGuildInfo.ClearInfo();
 
@@ -177,7 +177,7 @@ namespace VXIContractHiringHubs
                 {
                     FactionValue targetValue = __instance.CompletedContract.Override.targetTeam.FactionValue;
                     FactionValue tgtAllyValue = __instance.CompletedContract.Override.targetsAllyTeam.FactionValue;
-                    
+
                     if (targetValue.IsClan)
                     {
                         bool result = MercPilots.EndClanMission(__instance, targetValue);
@@ -247,6 +247,77 @@ namespace VXIContractHiringHubs
             }
         }
 
+
+        //[HarmonyPatch(typeof(SimGameState), "StartLanceConfiguration")]
+        //public static class SimGameState_StartLanceConfiguration_Patch
+        //{
+
+        //    public static void Prefix(SimGameState __instance)
+        //    {
+        //        try
+        //        {
+        //            __instance.SelectedContract ;
+        //        }
+        //        catch (Exception e)
+        //        {
+        //            Log.Error(e);
+        //        }
+        //    }
+        //}
+
+        [HarmonyPatch(typeof(SGContractsWidget), "PopulateContract")]
+        public static class SGContractsWidget_PopulateContract_Patch
+        {
+            public static void Prefix(SGContractsWidget __instance, Contract contract)
+            {
+                try
+                {
+                    //InfoClass.DeploymentInfo.ActiveMission = __instance.Contract.Override.ID;
+                    Log.Info($"EMPLOYER: {contract.ShortDescription}");
+                    Log.Info($"DARIUS: {contract.LongDescription}");
+                }
+                catch (Exception e)
+                {
+                    Log.Error(e);
+                }
+            }
+        }
+
+        [HarmonyPatch(typeof(LanceContractDetailsWidget), "PopulateContract")]
+        public static class LanceContractDetailsWidget_PopulateContract_Patch
+        {
+            public static void Prefix(LanceContractDetailsWidget __instance, Contract contract)
+            {
+                try
+                {
+                    //InfoClass.DeploymentInfo.ActiveMission = __instance.Contract.Override.ID;
+                    Log.Info($"LANCE EMPLOYER: {contract.ShortDescription}");
+                    Log.Info($"LANCE DARIUS: {contract.LongDescription}");
+                }
+                catch (Exception e)
+                {
+                    Log.Error(e);
+                }
+            }
+        }
+
+        [HarmonyPatch(typeof(SGContractsListItem), "OnClicked")]
+        public static class SGContractsListItem_OnClicked_Patch
+        {
+
+            public static void Prefix(SGContractsListItem __instance)
+            {
+                try
+                {
+                    InfoClass.DeploymentInfo.ActiveMission = __instance.Contract.Override.ID;
+                }
+                catch (Exception e)
+                {
+                    Log.Error(e);
+                }
+            }
+        }
+
         //[HarmonyPatch(typeof(SGRoomController_CmdCenter), "StartContractScreen")]
         [HarmonyPatch(typeof(SimGameState), "GeneratePotentialContracts")]
         public static class SimGameState_GeneratePotentialContracts_Patch
@@ -290,36 +361,53 @@ namespace VXIContractHiringHubs
         [HarmonyPatch(typeof(StarSystem), "GenerateInitialContracts")]
         public static class StarSystem_GenerateInitialContracts_Patch
         {
+            static bool IsBlockedContractGen = true;
             static bool Prefix(StarSystem __instance)
             {
                 try
                 {
-                    if (InfoClass.DeploymentInfo.IsDeployment)
+                    if (InfoClass.DeploymentInfo.IsDeployment || (Main.Settings.CapitalsTravelOnly && (ContainsKeyValue(Main.Settings.MajorFactionCapitals, __instance.Name, __instance.OwnerValue.Name) || ContainsKeyValue(Main.Settings.MinorFactionCapitals, __instance.Name, __instance.OwnerValue.Name))))
                     {
-                        InfoClass.DeploymentInfo.IsGenInitContracts = true;
+                        if (InfoClass.DeploymentInfo.IsDeployment)
+                        {
+                            InfoClass.DeploymentInfo.IsGenInitContracts = true;
+                        }
+                        else if (Main.Settings.CapitalsTravelOnly)
+                        {
+                            Log.Info($"CapitalsTravelOnly: The {__instance.OwnerValue.Name} capital {__instance.Name} is blocked for in-system contracts.");
+                            InfoClass.MercGuildInfo.IsGenInitContracts = true;
+                            InfoClass.DeploymentInfo.IsGenInitContracts = true;
+                            InfoClass.MercGuildInfo.DateHubUpdate = __instance.Sim.CurrentDate.AddDays(-1 - Main.Settings.MercGuildContractRefresh);
+                        }
+
                         ContractHiringHubs.UpdateTheHubs(__instance.Sim);
                         Traverse.Create(__instance.Sim.RoomManager.CmdCenterRoom).Property("holdForNewContract").SetValue(false);
                         SGContractsWidget contractsWidget = GetInstanceField(typeof(SGRoomController_CmdCenter), __instance.Sim.RoomManager.CmdCenterRoom, "contractsWidget") as SGContractsWidget;
                         contractsWidget.ListContracts(__instance.Sim.GetAllCurrentlySelectableContracts(true));
-                        return false;
+                        IsBlockedContractGen = false;
+                        return IsBlockedContractGen;
                     }
                 }
                 catch (Exception e)
                 {
                     Log.Error(e);
                 }
-                return true;
+                return IsBlockedContractGen;
             }
 
             public static void Postfix(StarSystem __instance)
             {
                 try
                 {
-                    InfoClass.MercGuildInfo.IsGenInitContracts = true;
-                    InfoClass.DeploymentInfo.IsGenInitContracts = true;
-                    InfoClass.MercGuildInfo.DateHubUpdate = __instance.Sim.CurrentDate.AddDays(-1 - Main.Settings.MercGuildContractRefresh);
+                    if (IsBlockedContractGen)
+                    {
+                        InfoClass.MercGuildInfo.IsGenInitContracts = true;
+                        InfoClass.DeploymentInfo.IsGenInitContracts = true;
 
-                    ContractHiringHubs.UpdateTheHubs(__instance.Sim);
+                        InfoClass.MercGuildInfo.DateHubUpdate = __instance.Sim.CurrentDate.AddDays(-1 - Main.Settings.MercGuildContractRefresh);
+
+                        ContractHiringHubs.UpdateTheHubs(__instance.Sim);
+                    }
                 }
                 catch (Exception e)
                 {

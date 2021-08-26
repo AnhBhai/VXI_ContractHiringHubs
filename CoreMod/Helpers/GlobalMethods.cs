@@ -2,32 +2,33 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Reflection;
+using Microsoft.CSharp;
 
 namespace Helpers
 {
     class GlobalMethods
     {
-        public static bool TryLoadAssembly(string modFolder, string nameDLL, string assemblyClass, dynamic secondaryClass, out dynamic dynamicClass)
+        internal static bool TryLoadAssembly(string modFolder, string nameDLL, string assemblyClass, out dynamic dynamicInstance)
         {
             string assemblyFullName = Path.Combine(Directory.GetParent($"{ VXIContractHiringHubs.Main.Settings.modDirectory}").FullName + modFolder, nameDLL);
 
             if (File.Exists(assemblyFullName))
             {
                 var RealAssembly = Assembly.LoadFrom(assemblyFullName);
-                var TheClass = RealAssembly.GetType(assemblyClass);
-                dynamicClass = Activator.CreateInstance(TheClass);
+                var theClass = RealAssembly.GetType(assemblyClass);
+                dynamicInstance = Activator.CreateInstance(theClass);
 
                 return true;
             }
             else
             {
-                dynamicClass = secondaryClass;
+                dynamicInstance = new GlobalMethods();
                 
                 return false;
             }
         }
 
-        public static bool ContainsKeyValue(Dictionary<string, string> dictionary, string expectedKey, string expectedValue)
+        internal static bool ContainsKeyValue(Dictionary<string, string> dictionary, string expectedKey, string expectedValue)
         {
             string actualValue;
             if (!dictionary.TryGetValue(expectedKey, out actualValue))
@@ -37,7 +38,7 @@ namespace Helpers
             return actualValue == expectedValue;
         }
 
-        //public static bool ContainsKeyValue( dictionary, string expectedKey, string expectedValue)
+        //internal static bool ContainsKeyValue( dictionary, string expectedKey, string expectedValue)
         //{
         //    KeyValuePair<string, Dictionary<string, List<string>>> actualValue;
         //    if (!dictionary.TryGetValue(expectedKey, out actualValue))
@@ -72,7 +73,7 @@ namespace Helpers
             return func.Invoke(instance, parameters);
         }
 
-        public static string AddOrdinal(int num)
+        internal static string AddOrdinal(int num)
         {
             if (num <= 0) return num.ToString();
 

@@ -463,6 +463,187 @@ namespace VXIContractHiringHubs
 			pilotDef.PilotTags.Add("pilot_clan");
 		}
 
+		//private PilotDef GenerateRandomPilot(int systemDifficulty)
+		//{
+		//	int num = this.Sim.Constants.Pilot.MinimumPilotAge + this.Sim.NetworkRandom.Int(1, this.Sim.Constants.Pilot.StartingAgeRange + 1);
+		//	string firstName;
+		//	string lastName;
+		//	Gender gender;
+		//	this.GetNameAndGender(out firstName, out lastName, out gender);
+		//	string text = null;
+		//	List<string> allCallsigns = this.pilotNameGenerator.GetAllCallsigns();
+		//	List<string> list = new List<string>();
+		//	for (int i = allCallsigns.Count - 1; i >= 0; i--)
+		//	{
+		//		if (this.Sim.pilotGenCallsignDiscardPile.Contains(allCallsigns[i]))
+		//		{
+		//			list.Add(allCallsigns[i]);
+		//			allCallsigns.RemoveAt(i);
+		//		}
+		//	}
+		//	if ((float)list.Count >= (float)allCallsigns.Count * this.Sim.Constants.Story.DiscardPileToActiveRatio)
+		//	{
+		//		allCallsigns.AddRange(list);
+		//		this.Sim.pilotGenCallsignDiscardPile.Clear();
+		//	}
+		//	allCallsigns.Shuffle<string>();
+		//	text = allCallsigns[0];
+		//	LifepathNodeDef lifepathNodeDef = this.GetStartingNode(systemDifficulty);
+		//	List<LifepathNodeDef> list2 = new List<LifepathNodeDef>();
+		//	PilotDef pilotDef = new PilotDef(new HumanDescriptionDef(), 1, 1, 1, 1, 1, 1, false, 1, "", new List<string>(), AIPersonality.Undefined, 0, 0, 0);
+		//	TagSet tagSet = new TagSet();
+		//	List<EndingPair> list3 = new List<EndingPair>();
+		//	List<SimGameEventResultSet> list4 = new List<SimGameEventResultSet>();
+		//	StatCollection stats;
+		//	while (lifepathNodeDef != null)
+		//	{
+		//		list2.Add(lifepathNodeDef);
+		//		num += lifepathNodeDef.Duration;
+		//		SimGameEventResultSet resultSet = this.Sim.GetResultSet(lifepathNodeDef.ResultSets);
+		//		foreach (SimGameEventResult simGameEventResult in resultSet.Results)
+		//		{
+		//			if (simGameEventResult.AddedTags != null)
+		//			{
+		//				tagSet.AddRange(simGameEventResult.AddedTags);
+		//			}
+		//			if (simGameEventResult.RemovedTags != null)
+		//			{
+		//				tagSet.RemoveRange(simGameEventResult.RemovedTags);
+		//			}
+		//			if (simGameEventResult.Stats != null)
+		//			{
+		//				for (int k = 0; k < simGameEventResult.Stats.Length; k++)
+		//				{
+		//					SimGameStat simGameStat = simGameEventResult.Stats[k];
+		//					float f = simGameStat.ToSingle();
+		//					SkillType skillType = this.SkillStringToType(simGameStat.name);
+		//					if (skillType != SkillType.NotSet)
+		//					{
+		//						int num2 = Mathf.RoundToInt(f);
+		//						int baseSkill = pilotDef.GetBaseSkill(skillType);
+		//						pilotDef.AddBaseSkill(skillType, num2);
+		//						for (int l = baseSkill + 1; l <= baseSkill + num2; l++)
+		//						{
+		//							this.SetPilotAbilities(pilotDef, simGameStat.name, l);
+		//						}
+		//					}
+		//				}
+		//			}
+		//		}
+		//		list4.Add(resultSet);
+		//		List<LifepathNodeEnding> list5 = new List<LifepathNodeEnding>();
+		//		stats = pilotDef.GetStats();
+		//		for (int m = 0; m < lifepathNodeDef.Endings.Length; m++)
+		//		{
+		//			RequirementDef requirements = lifepathNodeDef.Endings[m].Requirements;
+		//			if (requirements == null || SimGameState.MeetsRequirements(requirements.RequirementTags, requirements.ExclusionTags, requirements.RequirementComparisons, tagSet, stats, null))
+		//			{
+		//				list5.Add(lifepathNodeDef.Endings[m]);
+		//			}
+		//		}
+		//		LifepathNodeDef lifepathNodeDef2 = null;
+		//		if (list5.Count > 0)
+		//		{
+		//			List<int> list6 = new List<int>();
+		//			for (int n = 0; n < list5.Count; n++)
+		//			{
+		//				list6.Add(list5[n].Weight);
+		//			}
+		//			int weightedResult = SimGameState.GetWeightedResult(list6, this.Sim.NetworkRandom.Float(0f, 1f));
+		//			LifepathNodeEnding lifepathNodeEnding = list5[weightedResult];
+		//			EndingPair item = default(EndingPair);
+		//			item.ending = lifepathNodeEnding;
+		//			TagSet nextNodeTags = lifepathNodeEnding.NextNodeTags;
+		//			float num3 = (float)num * this.Sim.Constants.Pilot.AgeEndingModifier;
+		//			bool flag = false;
+		//			if ((float)this.Sim.NetworkRandom.Int(0, 100) < num3 && !lifepathNodeDef.ForceNode)
+		//			{
+		//				flag = true;
+		//			}
+		//			if (!lifepathNodeEnding.EndNode && !flag)
+		//			{
+		//				List<LifepathNodeDef> list7 = new List<LifepathNodeDef>();
+		//				for (int num4 = 0; num4 < this.lifepaths.Count; num4++)
+		//				{
+		//					if (nextNodeTags == null || this.lifepaths[num4].NodeTags.ContainsAll(nextNodeTags))
+		//					{
+		//						RequirementDef requirements2 = this.lifepaths[num4].Requirements;
+		//						if (requirements2 != null)
+		//						{
+		//							TagSet requirementTags = requirements2.RequirementTags;
+		//							TagSet exclusionTags = requirements2.ExclusionTags;
+		//							List<ComparisonDef> requirementComparisons = requirements2.RequirementComparisons;
+		//							if (!SimGameState.MeetsRequirements(requirementTags, exclusionTags, requirementComparisons, tagSet, stats, null))
+		//							{
+		//								goto IL_443;
+		//							}
+		//						}
+		//						list7.Add(this.lifepaths[num4]);
+		//					}
+		//				IL_443:;
+		//				}
+		//				if (list7.Count > 0)
+		//				{
+		//					lifepathNodeDef2 = list7[this.Sim.NetworkRandom.Int(0, list7.Count)];
+		//					item.nextNode = lifepathNodeDef2;
+		//				}
+		//				else
+		//				{
+		//					Debug.LogWarning("Unable to find new node from ending: " + lifepathNodeEnding.Description.Id + " | " + lifepathNodeDef.Description.Id);
+		//				}
+		//			}
+		//			list3.Add(item);
+		//		}
+		//		lifepathNodeDef = lifepathNodeDef2;
+		//	}
+		//	this.sb = new StringBuilder();
+		//	foreach (SimGameEventResultSet simGameEventResultSet in list4)
+		//	{
+		//		if (simGameEventResultSet.Description.Name != "")
+		//		{
+		//			this.sb.Append(string.Format("<b>{1}:</b> {0}\n\n", simGameEventResultSet.Description.Details, simGameEventResultSet.Description.Name));
+		//		}
+		//	}
+		//	string id = this.GenerateID();
+		//	Gender gender2 = gender;
+		//	if (gender2 == Gender.NonBinary)
+		//	{
+		//		if (this.Sim.NetworkRandom.Float(0f, 1f) < 0.5f)
+		//		{
+		//			gender2 = Gender.Male;
+		//		}
+		//		else
+		//		{
+		//			gender2 = Gender.Female;
+		//		}
+		//	}
+		//	string voice = this.GenerateVoiceForGender(gender2);
+		//	HumanDescriptionDef description = new HumanDescriptionDef(id, text, firstName, lastName, text, gender, FactionEnumeration.GetNoFactionValue(), num, this.sb.ToString(), null);
+		//	stats = pilotDef.GetStats();
+		//	int spentXPPilot = this.GetSpentXPPilot(stats);
+		//	List<string> list8 = new List<string>();
+		//	if (this.Sim.Commander != null && this.Sim.Commander.pilotDef.PortraitSettings != null)
+		//	{
+		//		list8.Add(this.Sim.Commander.pilotDef.PortraitSettings.Description.Id);
+		//	}
+		//	foreach (Pilot pilot in this.Sim.PilotRoster)
+		//	{
+		//		if (pilot.pilotDef.PortraitSettings != null)
+		//		{
+		//			list8.Add(pilot.pilotDef.PortraitSettings.Description.Id);
+		//		}
+		//	}
+		//	PilotDef pilotDef2 = new PilotDef(description, pilotDef.BaseGunnery, pilotDef.BasePiloting, pilotDef.BaseGuts, pilotDef.BaseTactics, 0, this.Sim.CombatConstants.PilotingConstants.DefaultMaxInjuries, false, 0, voice, pilotDef.abilityDefNames, AIPersonality.Undefined, 0, tagSet, spentXPPilot, 0)
+		//	{
+		//		DataManager = this.Sim.DataManager,
+		//		PortraitSettings = this.GetPortraitForGenderAndAge(gender2, num, list8)
+		//	};
+		//	pilotDef2.ForceRefreshAbilityDefs();
+		//	this.Sim.pilotGenCallsignDiscardPile.Add(pilotDef2.Description.Callsign);
+		//	return pilotDef2;
+		//}
+
+
 		[HarmonyPatch(typeof(SimGameState), "SetupRoninTooltip")]
         public static class SimGameState_SetupRoninTooltip_Patch
         {
@@ -492,5 +673,89 @@ namespace VXIContractHiringHubs
                 }
             }
         }
+
+		[HarmonyPatch(typeof(PilotGenerator), "GetStartingNode")]
+		public static class PilotGenerator_GetStartingNode_Patch
+		{
+			public static void Postfix(PilotGenerator __instance, ref LifepathNodeDef __result, int systemDifficulty)
+			{
+				try
+				{
+					if (Main.Settings.IncLifeNodes)
+					{
+						SimGameState sim = GetInstanceField(typeof(PilotGenerator), __instance, "Sim") as SimGameState;
+
+						List<LifepathNodeDef> lifepaths = GetInstanceField(typeof(PilotGenerator), __instance, "lifepaths") as List<LifepathNodeDef>;
+
+						string startType = "_start_";
+
+						if (sim.Constants.Pilot.AdvancedPilotBaseChance + (float)systemDifficulty * sim.Constants.Pilot.AdvancedPilotDifficultyStep > sim.NetworkRandom.Float(0f, 1f))
+						{
+							startType = "_astart_";
+						}
+
+						switch (sim.CurSystem.OwnerValue.Name)
+						{
+							case "Davion":
+								__result = lifepaths.Find(x => x.Description.Id.Equals($"lifenode{startType}hDavion"));
+								break;
+							case "Liao":
+								__result = lifepaths.Find(x => x.Description.Id.Equals($"lifenode{startType}hLiao"));
+								break;
+							case "Kurita":
+								__result = lifepaths.Find(x => x.Description.Id.Equals($"lifenode{startType}hKurita"));
+								break;
+							case "Marik":
+								__result = lifepaths.Find(x => x.Description.Id.Equals($"lifenode{startType}hMarik"));
+								break;
+							case "Steiner":
+								__result = lifepaths.Find(x => x.Description.Id.Equals($"lifenode{startType}hSteiner"));
+								break;
+							case "Rasalhague":
+								__result = lifepaths.Find(x => x.Description.Id.Equals($"lifenode{startType}nRasalhague"));
+								break;
+							case "TaurianConcordat":
+								__result = lifepaths.Find(x => x.Description.Id.Equals($"lifenode{startType}pTaurianConcordat"));
+								break;
+							case "MagistracyOfCanopus":
+								__result = lifepaths.Find(x => x.Description.Id.Equals($"lifenode{startType}pMagistracyOfCanopus"));
+								break;
+							case "AuriganRestoration":
+								__result = lifepaths.Find(x => x.Description.Id.Equals($"lifenode{startType}pAuriganRestoration"));
+								break;
+							case "Outworld":
+								__result = lifepaths.Find(x => x.Description.Id.Equals($"lifenode{startType}pOutworld"));
+								break;
+							default:
+								__result = lifepaths.Find(x => x.Description.Id.Equals($"lifenode{startType}pIndependent"));
+								break;
+						}
+					}
+				}
+				catch (Exception e)
+				{
+					Log.Error(e);
+				}
+			}
+		}
+
+		[HarmonyPatch(typeof(PilotGenerator), "GenerateRandomPilot")]
+		public static class PilotGenerator_GenerateRandomPilot_Patch
+		{
+			public static void Postfix(PilotGenerator __instance, ref PilotDef __result)
+			{
+				try
+				{
+					if (Main.Settings.IncLifeNodes)
+					{
+						// Can add pilot info here
+					}
+				}
+				catch (Exception e)
+				{
+					Log.Error(e);
+				}
+			}
+		}
 	}
 }

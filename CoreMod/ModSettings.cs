@@ -9,6 +9,11 @@ namespace VXIContractHiringHubs
         public string Version = "0.3.0.0";
         public bool Debug = false;
         public string modDirectory;
+        
+        public bool ExcludeClanSystems = true;
+        public bool ExcludeCapitals = true;
+        public bool CapitalsTravelOnly = true;
+        public bool IncLifeNodes = true;
 
         public int LengthDeploymentDays = 30;
         public int DeploymentContractRefresh = 5;
@@ -73,7 +78,7 @@ namespace VXIContractHiringHubs
 
         public Dictionary<int, int> ProgressiveTrainees = new Dictionary<int, int>();
 
-        public Dictionary<string, string> FullXotlTables_UnitToFactionCollection = new Dictionary<string, string>();
-        public Dictionary<string, string> FullXotlTables_UnitToFactionVeeCollection = new Dictionary<string, string>();
+        public Dictionary<string, string> FullXotlTables_UnitToFactionCollection = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+        public Dictionary<string, string> FullXotlTables_UnitToFactionVeeCollection = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
     }
 }

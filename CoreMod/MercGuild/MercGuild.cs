@@ -46,6 +46,16 @@ namespace VXIContractHiringHubs
 
                 if (filteredStarSystems.Count > 0 && !finalList.ContainsKey(factionValue))
                 {
+                    if (Main.Settings.ExcludeCapitals && (Main.Settings.MajorFactionCapitals.Values.Contains(factionValue.Name) || Main.Settings.MinorFactionCapitals.Values.Contains(factionValue.Name)))
+                    {
+                        int totalSystems = filteredStarSystems.Count;
+                        if (Main.Settings.MajorFactionCapitals.Values.Contains(factionValue.Name))
+                            filteredStarSystems = filteredStarSystems.FindAll(f => !ContainsKeyValue(Main.Settings.MajorFactionCapitals, f.Name, f.OwnerValue.Name)).ToList();
+                        else
+                            filteredStarSystems = filteredStarSystems.FindAll(f => !ContainsKeyValue(Main.Settings.MinorFactionCapitals, f.Name, f.OwnerValue.Name)).ToList();
+                        Log.Info($"ExcludeCapitals set to True, so excluded {totalSystems-filteredStarSystems.Count} system from {factionValue.Name}");
+                    }
+
                     if (factionValue.Name.Equals("Locals"))
                     {
                         if (finalList.ContainsKey(FactionEnumeration.GetAuriganPiratesFactionValue()))
@@ -190,18 +200,20 @@ namespace VXIContractHiringHubs
                 bool clearFirst = false;
                 int deploymentMissions = 0;
 
-                List<FactionValue> blackList = new List<FactionValue>();
-                blackList.Add(GenerateContractFactions.GetFactionValueFromString("ComStar"));
-                blackList.Add(GenerateContractFactions.GetFactionValueFromString("NoFaction"));
-
-                SystemsByFaction = GetExistingSystemsByFaction(simGame, blackList);
-                SystemsByFactionUnused = GetExistingSystemsByFaction(simGame, blackList);
-
                 int lastDeploy = Main.Settings.ReduceDeployChanceDays - Math.Min(Main.Settings.ReduceDeployChanceDays, simGame.CurrentDate.Subtract(InfoClass.DeploymentInfo.DateDeploymentEnd).Days);
 
                 Log.Info("Game Date: " + currentDate.ToString("yyyy-MM-dd") + ":: DateHubUpdate: " + InfoClass.MercGuildInfo.DateHubUpdate.ToString("yyyy-MM-dd") + "(" + InfoClass.MercGuildInfo.IsGenInitContracts + ")");
                 if (currentDate > InfoClass.MercGuildInfo.DateHubUpdate.AddDays(Main.Settings.MercGuildContractRefresh) && InfoClass.MercGuildInfo.IsGenInitContracts)
                 {
+                    List<FactionValue> blackList = new List<FactionValue>();
+                    blackList.Add(GenerateContractFactions.GetFactionValueFromString("ComStar"));
+                    blackList.Add(GenerateContractFactions.GetFactionValueFromString("NoFaction"));
+                    if (Main.Settings.ExcludeClanSystems)
+                        blackList.AddRange(FactionEnumeration.FactionList.FindAll(f => f.IsClan == true).ToList());
+
+                    SystemsByFaction = GetExistingSystemsByFaction(simGame, blackList);
+                    SystemsByFactionUnused = GetExistingSystemsByFaction(simGame, blackList);
+
                     string currentSystem = simGame.CurSystem.Name;
                     string currentOwner = simGame.CurSystem.OwnerValue.Name;
                     string longDesc = $"We'll be behind enemy lines here, we'll get generous salvage on this contract and our employer will cover jump costs and {ContractHiringHubs.PercentageExpenses * 100}% of our operating costs during travel. ";

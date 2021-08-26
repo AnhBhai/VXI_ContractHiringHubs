@@ -130,6 +130,7 @@ namespace Helpers
         public List<string> MissionTypes = new List<string>();
         public MercDeploymentStats MDStats = new MercDeploymentStats(true);
         public Dictionary<string, DeploymentContractInfo> DCInfo = new Dictionary<string, DeploymentContractInfo>();
+        public string ActiveMission;
 
         public bool CompletedEndGame;
 
@@ -145,6 +146,7 @@ namespace Helpers
             EmployerCosts = 0;
             MissionTypes.Clear();
             DCInfo.Clear();
+            ActiveMission = "";
             //this.ClearMDStats();
             CompletedEndGame = false;
         }
@@ -259,10 +261,7 @@ namespace Helpers
                                 string json = r.ReadToEnd();
                                 MercGuildInfo save = JsonConvert.DeserializeObject<MercGuildInfo>(json);
 
-                                InfoClass.MercGuildInfo.DateHubUpdate = save.DateHubUpdate;
-                                InfoClass.MercGuildInfo.IsDeployment = save.IsDeployment;
-                                InfoClass.MercGuildInfo.IsGenInitContracts = save.IsGenInitContracts;
-                                InfoClass.MercGuildInfo.EmployerCosts = save.EmployerCosts;
+                                InfoClass.MercGuildInfo = save;
                             }
                         }
                         break;
@@ -275,17 +274,7 @@ namespace Helpers
                                 string json = r.ReadToEnd();
                                 MercDeploymentInfo save = JsonConvert.DeserializeObject<MercDeploymentInfo>(json);
 
-                                InfoClass.DeploymentInfo.DeploymentFactionID = save.DeploymentFactionID;
-                                InfoClass.DeploymentInfo.DateDeploymentEnd = save.DateDeploymentEnd;
-                                InfoClass.DeploymentInfo.DateLastRefresh = save.DateLastRefresh;
-                                InfoClass.DeploymentInfo.IsGenInitContracts = save.IsGenInitContracts;
-                                InfoClass.DeploymentInfo.IsDeployment = save.IsDeployment;
-                                InfoClass.DeploymentInfo.Wave = save.Wave;
-                                InfoClass.DeploymentInfo.NoWaveContracts = save.NoWaveContracts;
-                                InfoClass.DeploymentInfo.EmployerCosts = save.EmployerCosts;
-                                InfoClass.DeploymentInfo.MissionTypes = save.MissionTypes;
-                                InfoClass.DeploymentInfo.MDStats = save.MDStats;
-                                InfoClass.DeploymentInfo.DCInfo = save.DCInfo;
+                                InfoClass.DeploymentInfo = save;
                             }
                         }
                         break;
@@ -297,9 +286,7 @@ namespace Helpers
                             {
                                 string json = r.ReadToEnd();
                                 MercPilotInfo save = JsonConvert.DeserializeObject<MercPilotInfo>(json);
-                                InfoClass.MercPilotInfo.IsGenInitPilots = save.IsGenInitPilots;
-                                InfoClass.MercPilotInfo.BondsrefCount = save.BondsrefCount;
-                                InfoClass.MercPilotInfo.PortraitUsed = save.PortraitUsed;
+                                InfoClass.MercPilotInfo = save;
                             }
                         }
                         break;

@@ -11,13 +11,14 @@
 - Morphyum, for the inspiration and code examples (MercDeployment) - https-//github.com/BattletechModders/MercDeployments
 - mcb, for his code tips and excellent mods - https-//github.com/mcb5637
 - Carcer, for invaluable proof reading and editing 
+- Seraph Padecain, for helping with pilot backstories
 - Beta Testers - mcb, paulobrito, cww1964, Darkstalker Kagami, jhelivar
 
 ### Dependencies		
 - VXI_ContractManagement mod - Stand alone mod written for ContractHiringHubs to create and track custom contracts.
 
 ### Conflicts		
-- No known conflicts)
+- No known conflicts
 
 ### Features
 - **Merc Guilds** : This feature brings Travel Contracts, Travel Raids and Kicks off Deployments on key worlds, in particular Outreach and Terra which have no contracts in BEX.
